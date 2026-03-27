@@ -1,4 +1,4 @@
-package core.domain;
+package org.c3cavite.core.domain;
 
 public enum AgeTier {
 
