@@ -1,4 +1,4 @@
-package domain;
+package core.domain;
 
 public enum Gender {
 
