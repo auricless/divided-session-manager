@@ -1,20 +1,32 @@
 package org.c3cavite.core.domain;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 public enum AgeTier {
+    TEENS(13, 15),
+    YOUTH(16, 22),
+    YOUNG_ADULT(23, Integer.MAX_VALUE);
 
-    // TODO: add more Age tiers
-    TEEN;
+    private final int minAge;
+    private final int maxAge;
 
-    public static AgeTier fromAge(int age) {
-        if (age >= 13 && age <= 15) {
-            return TEEN;
-        }
-
-        throw new IllegalArgumentException("This age range is not supported");
+    AgeTier(int minAge, int maxAge) {
+        this.minAge = minAge;
+        this.maxAge = maxAge;
     }
 
-    @Override
-    public String toString() {
-        return this.name();
+    public static Optional<AgeTier> fromAge(int age) {
+        return Arrays.stream(values())
+                .filter(tier -> age >= tier.minAge && age <= tier.maxAge)
+                .findFirst();
+    }
+
+    public int getMinAge() {
+        return minAge;
+    }
+
+    public int getMaxAge() {
+        return maxAge;
     }
 }
