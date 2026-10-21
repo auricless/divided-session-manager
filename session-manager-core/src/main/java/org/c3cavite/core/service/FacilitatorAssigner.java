@@ -36,7 +36,10 @@ public class FacilitatorAssigner {
                             group.getAgeTierTarget(), group.getGenderTarget())));
             if (selected.isEmpty()) {
                 if (role == Role.LEADER) {
+                    group.assignLeader(null);
                     warnings.add("Group " + (i + 1) + " for " + group.getAgeTierTarget() + " is leaderless.");
+                } else {
+                    group.assignAssistant(null);
                 }
                 continue;
             }

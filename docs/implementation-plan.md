@@ -67,6 +67,7 @@ Acceptance criteria:
 - Reuse the same eligibility rules for consolidation counts and assignment.
 
 TDD: three regressions failed in 80 tests before implementation. New exception tests preceded their APIs. Initial implementation passes all 87 tests and full Maven verification.
+PR #5 review pass 1 identified stale role assignments when callers reuse a Group after withdrawing exceptions. One regression failed in 88 tests before clearing unfilled role slots on recomputation.
 
 ## Next iterations
 
