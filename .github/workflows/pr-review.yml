@@ -1,0 +1,113 @@
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Maven and publisher tests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Verify core library
+        run: mvn --batch-mode --no-transfer-progress verify
+      - name: Test review publication and failure handling
+        run: node .github/scripts/publish-review.test.cjs
+
+  review:
+    name: Codex analysis
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      result: ${{ steps.codex.outputs.final-message }}
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Require a trusted repository branch
+        env:
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
+            echo '::error::Automatic Codex review requires a branch in this repository; fork secrets are not exposed.'
+            exit 1
+          fi
+      - name: Require the review credential
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo '::error::Configure OPENAI_API_KEY as a repository Actions secret before requesting an automated review.'
+            exit 1
+          fi
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Review the current changelist
+        id: codex
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          codex-version: '0.163.0'
+          prompt-file: .github/codex/review.md
+          output-schema-file: .github/codex/review-schema.json
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          model: ${{ vars.CODEX_REVIEW_MODEL }}
+          effort: high
+
+  publish:
+    name: Codex review
+    if: ${{ always() && !cancelled() && !github.event.pull_request.draft }}
+    needs: [tests, review]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Require successful tests and analysis
+        env:
+          TESTS_RESULT: ${{ needs.tests.result }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+        run: |
+          if [ "$TESTS_RESULT" != success ] || [ "$REVIEW_RESULT" != success ]; then
+            echo '::error::Tests and Codex analysis must both finish successfully before review can pass.'
+            exit 1
+          fi
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Publish inline review and enforce verdict
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          REVIEW_JSON: ${{ needs.review.outputs.result }}
+          REVIEWED_HEAD: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const { publishReview } = require('./.github/scripts/publish-review.cjs');
+            await publishReview({ github, context, core,
+              reviewText: process.env.REVIEW_JSON,
+              expectedHead: process.env.REVIEWED_HEAD });
