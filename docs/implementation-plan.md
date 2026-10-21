@@ -68,6 +68,21 @@ Acceptance criteria:
 
 TDD: three regressions failed in 80 tests before implementation. New exception tests preceded their APIs. Initial implementation passes all 87 tests and full Maven verification.
 PR #5 review pass 1 identified stale role assignments when callers reuse a Group after withdrawing exceptions. One regression failed in 88 tests before clearing unfilled role slots on recomputation.
+All 88 tests passed after the fix; review pass 2 passed and PR #5 was merged. SM-14/28 are Done.
+
+## Iteration 4: staffing-aware orchestration and minimum sizes (SM-15 / SM-29)
+
+Acceptance criteria:
+
+- Match leaders across the shared roster without starving a restricted tier; apply normal rules before explicit exceptions.
+- Consolidate within each demographic segment only when it reduces missing leaders and respects the configured hard cap.
+- Distribute attendees evenly; avoid singleton groups where possible. SRS ALG-08 applies to tier/gender segments, including their life-stage groups. Return a minimum-size blocker when cap or life-stage constraints prevent compliance.
+- Preserve Youth priority, deterministic ordering, participant isolation, final/proposal states, exception visibility, and stateless reruns.
+- Reject null inputs and include an under-13 exclusion warning.
+
+TDD: seven regressions failed in 95 tests, then validation expanded the red suite to eight failures in 96 tests. A matching refinement failed once in 97 tests before normal-only matching was added ahead of exception matching. All 98 tests pass, including 625 sizing configurations. Full Maven verification passes.
+
+An informal CLI performance/invariant check ran 200 attendees, ten target/staffing combinations, 10 warmups and 20 measured runs per combination. Maximum measured time was 237.800 ms; counts and hard caps were checked. This is local evidence, not a standardized benchmark.
 
 ## Next iterations
 

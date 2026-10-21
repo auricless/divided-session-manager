@@ -2,7 +2,7 @@ package org.c3cavite.core.domain;
 
 /** An organizer action required for a one-based group number in the result. */
 public final class AssignmentBlocker {
-    public enum Code { MISSING_LEADER, INVALID_LEADER_ROLE, GROUP_CAP_EXCEEDED }
+    public enum Code { MISSING_LEADER, INVALID_LEADER_ROLE, GROUP_CAP_EXCEEDED, MINIMUM_GROUP_SIZE }
 
     private final Code code;
     private final int groupNumber;

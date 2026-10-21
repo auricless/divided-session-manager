@@ -2,7 +2,7 @@
 
 Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository currently contains its Java grouping engine, not a usable registration application.
 
-The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) records the first-release requirements and planned later phases. The first release is the core assignment library: it should produce a final assignment automatically when all required conditions are met and accept explicit organizer overrides for recomputation or validation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
+The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) is the ultimate source of truth for design; it takes precedence over conflicting ticket checklists. The first release is the core assignment library: it produces a final assignment when all required conditions are met and accepts explicit organizer overrides for recomputation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
 
 ## Current state
 
@@ -17,7 +17,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 `GroupAssignmentService.assign(config, participants, facilitators)` accepts a `SessionConfig`, attendees, and facilitators. It returns an `AssignmentResult` with groups, an explicit state, actionable blockers, unassigned attendees with reasons, and warnings. Facilitators do not count toward participant group size.
 
-Results are immutable snapshots, including their groups and facilitator qualifications. `getState()` returns `FINAL` when every formed group has a LEADER and respects the supplied event cap; otherwise it returns `NON_FINAL_PROPOSAL`. An empty assignment is final. `getBlockers()` identifies affected groups by their one-based position in `getGroups()`, with a code and an action for the organizer. Excluded attendees remain in the unassigned list and do not block a staffed assignment. Mutable `Group` objects can still be used during assignment construction; mutation methods on groups returned in a result throw `UnsupportedOperationException`.
+Results are immutable snapshots, including their groups and facilitator qualifications. `getState()` returns `FINAL` when every formed group has a LEADER and respects the supplied event cap and minimum-size rule; otherwise it returns `NON_FINAL_PROPOSAL`. An empty assignment is final. `getBlockers()` identifies affected groups by their one-based position in `getGroups()`, with a code and an action for the organizer. Excluded attendees remain in the unassigned list and do not block a staffed assignment. Mutable `Group` objects can still be used during assignment construction; mutation methods on groups returned in a result throw `UnsupportedOperationException`.
 
 Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. There is no stored event, registration process, or user interface.
 
@@ -43,8 +43,8 @@ SessionConfig custom = SessionConfig.builder()
 ## Current assignment behavior
 
 1. Eligible attendees are segmented by age tier, by gender when `SEPARATED`, and by Young Adult life stage when enabled.
-2. Each segment starts with `ceil(attendee count / target size)` groups. Attendees are distributed evenly within that segment.
-3. When that count exceeds the number of available leaders qualified for the segment's tier, the engine may reduce the group count toward the configured cap. This calculation does not reserve leaders across segments.
+2. Each segment starts near `ceil(attendee count / target size)`, bounded by the hard cap and ALG-08's minimum of two attendees where possible. Attendees are distributed evenly within that segment.
+3. Leaders are matched across all segments, with Youth first. Flexible leaders can be reassigned to preserve coverage for restricted groups. When staffing is short, the engine tries segment consolidation that reduces the number of missing leaders while keeping the cap hard, and recomputes staffing against the shared pool.
 4. Leaders and then optional assistants are assigned from the supplied lists. Age-tier qualification and, in separated mode, matching facilitator gender are required unless explicitly waived for that facilitator. Candidates needing no exception are preferred. Each roster instance can staff at most one group; duplicate instances are rejected.
 5. A group without a leader remains in a **non-final proposal**, with a warning and an actionable blocker. A leaderless group cannot be finalized.
 
@@ -59,12 +59,14 @@ AssignmentResult result = service.assign(config, participants, facilitators, Lis
 
 The code processes Youth segments first. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
 
+ALG-08 permits a one-person group only when it is the only group in its tier/gender segment. If the cap or enabled life-stage separation makes that impossible, the engine preserves those constraints and returns `MINIMUM_GROUP_SIZE` blockers. For example, three attendees under a cap of two remain a proposal with groups of two and one; the engine never raises the cap or silently merges life stages.
+
 ## Gaps against the first-release requirements
 
 | Requirement | Current state |
 | --- | --- |
 | Configurable age-tier boundaries (CFG-04/06, PRT-02, NFR 5.3) | Implemented per session, including validation and assignment integration; defaults remain in `AgeTier`. |
-| No one-person group when a segment has multiple groups (ALG-08) | The current group-count and distribution logic can produce one. |
+| No one-person group when a segment has multiple groups (ALG-08) | Sizing avoids singletons where feasible; unavoidable conflicts produce a proposal with blockers. |
 | At least 80% core algorithm test coverage (NFR 5.3) | Tests exist; coverage has not been measured here. |
 | Review and overrides | Explicit facilitator qualification/gender exceptions are supported through a run-scoped overload. Further participant-level editing remains outside the first release. |
 
