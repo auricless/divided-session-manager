@@ -170,4 +170,21 @@ class FacilitatorAssignerTest {
         assertNull(group.getLeader());
         assertNull(group.getAssistant());
     }
+
+    @Test
+    void fullNormalCoverageDoesNotUseAnUnnecessaryException() {
+        Group youth = new Group(Gender.MALE, AgeTier.YOUTH, null);
+        Group teens = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator flexible = new Facilitator("Flexible", Role.LEADER, Gender.MALE,
+                List.of(AgeTier.YOUTH, AgeTier.TEENS));
+        Facilitator exception = new Facilitator("Exception", Role.LEADER, Gender.FEMALE, List.of(AgeTier.YOUTH));
+        Facilitator teensOnly = new Facilitator("Teens only", Role.LEADER, Gender.MALE, List.of(AgeTier.TEENS));
+
+        List<String> warnings = assigner.assign(List.of(youth, teens), List.of(flexible, exception, teensOnly),
+                SessionConfig.builder().capSize(6).build(), List.of(new FacilitatorException(exception, false, true)));
+
+        assertTrue(warnings.isEmpty());
+        assertEquals(flexible, youth.getLeader());
+        assertEquals(teensOnly, teens.getLeader());
+    }
 }

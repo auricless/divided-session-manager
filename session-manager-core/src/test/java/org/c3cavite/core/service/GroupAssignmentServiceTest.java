@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -171,5 +172,124 @@ class GroupAssignmentServiceTest {
         assertFalse(unchanged.isFinal());
         assertTrue(allowed.getWarnings().stream().anyMatch(w -> w.contains("exception")));
         assertEquals(List.of(AgeTier.TEENS), leader.getQualifiedTiers());
+    }
+
+    @Test
+    void consolidatesLifeStageSegmentsUsingTheSharedLeaderPool() {
+        List<Participant> participants = new java.util.ArrayList<>(attendees(5, 25, LifeStage.STUDENT));
+        participants.addAll(attendees(5, 25, LifeStage.WORKING_PROFESSIONAL));
+        AssignmentResult result = service.assign(SessionConfig.builder().targetSize(3).capSize(6).build(),
+                participants, leaders(2, AgeTier.YOUNG_ADULT));
+
+        assertTrue(result.isFinal());
+        assertEquals(2, result.getTotalGroups());
+        assertTrue(result.getGroups().stream().allMatch(g -> g.getParticipants().size() == 5));
+        assertEquals(2, result.getGroups().stream().map(Group::getLeader).distinct().count());
+    }
+
+    @Test
+    void flexibleLeadersDoNotStarveTierSpecificGroups() {
+        List<Participant> participants = new java.util.ArrayList<>(attendees(4, 17, null));
+        participants.addAll(attendees(4, 14, null));
+        Facilitator flexible = new Facilitator("Flexible", Role.LEADER, Gender.MALE,
+                List.of(AgeTier.YOUTH, AgeTier.TEENS));
+        Facilitator youthOnly = new Facilitator("Youth only", Role.LEADER, Gender.MALE, List.of(AgeTier.YOUTH));
+
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                participants, List.of(flexible, youthOnly));
+
+        assertTrue(result.isFinal());
+        assertEquals(youthOnly, result.getGroups().get(0).getLeader());
+        assertEquals(AgeTier.YOUTH, result.getGroups().get(0).getAgeTierTarget());
+    }
+
+    @Test
+    void avoidsSingletonGroupsEvenWhenTargetIsOne() {
+        AssignmentResult result = service.assign(SessionConfig.builder().targetSize(1).capSize(6).build(),
+                attendees(5, 17, null), leaders(5, AgeTier.YOUTH));
+
+        assertTrue(result.isFinal());
+        assertEquals(2, result.getTotalGroups());
+        assertTrue(result.getGroups().stream().allMatch(g -> g.getParticipants().size() >= 2));
+    }
+
+    @Test
+    void impossibleMinimumSizeReturnsProposalWithoutBreakingTheCap() {
+        AssignmentResult result = service.assign(SessionConfig.builder().targetSize(2).capSize(2).build(),
+                attendees(3, 17, null), leaders(2, AgeTier.YOUTH));
+
+        assertFalse(result.isFinal());
+        assertEquals(3, result.getTotalAssignedParticipants());
+        assertTrue(result.getGroups().stream().allMatch(g -> g.getParticipants().size() <= 2));
+        assertTrue(result.getBlockers().stream().anyMatch(b -> b.getCode() == AssignmentBlocker.Code.MINIMUM_GROUP_SIZE));
+    }
+
+    @Test
+    void lifeStageSeparationIsNotRelaxedToHideASingleton() {
+        List<Participant> participants = List.of(new Participant("Student", 25, Gender.MALE, LifeStage.STUDENT),
+                new Participant("Worker", 25, Gender.MALE, LifeStage.WORKING_PROFESSIONAL));
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                participants, leaders(2, AgeTier.YOUNG_ADULT));
+
+        assertFalse(result.isFinal());
+        assertEquals(2, result.getTotalGroups());
+    }
+
+    @Test
+    void shortageConsolidatesOnlyWithinTheHardCap() {
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                attendees(9, 17, null), List.of());
+
+        assertFalse(result.isFinal());
+        assertEquals(2, result.getTotalGroups());
+        assertEquals(9, result.getTotalAssignedParticipants());
+        assertTrue(result.getGroups().stream().allMatch(g -> g.getParticipants().size() <= 6));
+    }
+
+    @Test
+    void underThirteenExclusionIncludesAWarning() {
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                attendees(1, 12, null), List.of());
+
+        assertTrue(result.getWarnings().stream().anyMatch(w -> w.contains("under 13")));
+    }
+
+    @Test
+    void nullInputsAreRejectedBeforeAssignment() {
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+        assertThrows(IllegalArgumentException.class, () -> service.assign(null, List.of(), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> service.assign(config, null, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> service.assign(config, List.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> service.assign(config, List.of(), List.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> service.assign(config,
+                java.util.Arrays.asList((Participant) null), List.of()));
+    }
+
+    @Test
+    void sizingPreservesAttendeesCapsAndBalancedGroupsAcrossSmallConfigurations() {
+        for (int count = 1; count <= 25; count++) {
+            for (int target = 1; target <= 5; target++) {
+                for (int cap = target; cap <= 7; cap++) {
+                    AssignmentResult result = service.assign(SessionConfig.builder().targetSize(target).capSize(cap).build(),
+                            attendees(count, 17, null), leaders(count, AgeTier.YOUTH));
+                    assertEquals(count, result.getTotalAssignedParticipants());
+                    int smallest = result.getGroups().stream().mapToInt(g -> g.getParticipants().size()).min().orElseThrow();
+                    int largest = result.getGroups().stream().mapToInt(g -> g.getParticipants().size()).max().orElseThrow();
+                    assertTrue(largest <= cap);
+                    assertTrue(largest - smallest <= 1);
+                    assertEquals(result.getTotalGroups() == 1 || smallest >= 2, result.isFinal());
+                }
+            }
+        }
+    }
+
+    private List<Participant> attendees(int count, int age, LifeStage stage) {
+        return IntStream.range(0, count).mapToObj(i -> new Participant(stage + " attendee " + i,
+                age, Gender.MALE, stage)).toList();
+    }
+
+    private List<Facilitator> leaders(int count, AgeTier tier) {
+        return IntStream.range(0, count).mapToObj(i -> new Facilitator("Leader " + i, Role.LEADER,
+                Gender.MALE, List.of(tier))).toList();
     }
 }
