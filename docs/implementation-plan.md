@@ -86,7 +86,7 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 
 ## Remaining review and implementation gates
 
-- SM-31 / PR #7: live automated review is blocked on OpenAI API quota. The Codex subscription reset did not resolve the separate API quota failure. Do not merge without the automated verdict.
+- SM-31 / PR #7: switch to subscription-backed native Codex review plus API-free Maven CI. Java 17 CI passes; native account automatic-review setup and a completed current-head review remain required.
 - SM-8 / SM-9 / SM-11: model validation changes are saved on `fix/domain-validation`, pending their own automated-review PR.
 - SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are saved on `test/core-coverage`, pending automated review after the model change.
 - SM-20–23: complete the later Spring Boot wrapper, assignment endpoint, Dockerfile, and local Compose setup as a separate milestone after the core implementation.
@@ -117,7 +117,7 @@ TDD: the startup test first failed because no Spring Boot application configurat
 
 CLI smoke checks started both `mvn spring-boot:run` from the service module and the packaged JAR on port 8080, verified the expected HTTP 404 before endpoints exist, and stopped both processes. The core dependency tree contains only test-scoped JUnit dependencies and no Spring dependencies.
 
-This branch still requires automated PR review; the API quota blocker remains independent of local test success.
+This branch still requires a sequential PR, Java 17 CI, and a completed native Codex review.
 
 ## Phase 1B assignment API: SM-21
 
@@ -125,4 +125,14 @@ The [API contract](assignment-api.md) records the acceptance criteria and runnab
 
 TDD: all 25 initial HTTP cases failed with 404 before the endpoint existed. After implementation they passed. Six additional cases then exposed silent Jackson coercion of fractional caps/ages, numeric enum ordinals, numeric strings, and string boolean flags. The service now rejects those types using Jackson 3 settings. Full Maven verify passes 144 tests (112 core, 32 service), including final/proposal states, exceptions and their withdrawal, role preservation, custom boundaries, life stages, caps, exclusions, empty input, and clean invalid-input responses.
 
-A CLI smoke run using `mvn spring-boot:run` on port 8080 and the documented curl sample returned FINAL with one staffed group and two participants. A missing-cap request returned HTTP 400 with a capSize message and no stack trace. This implementation is pending agent review; the user has temporarily returned to our own agent review because no API credits are available.
+A CLI smoke run using `mvn spring-boot:run` on port 8080 and the documented curl sample returned FINAL with one staffed group and two participants. A missing-cap request returned HTTP 400 with a capSize message and no stack trace. This implementation is pending native Codex review; the user selected the subscription-backed GitHub integration because no API credits are available.
+
+## Phase 1B containers: SM-22 / SM-23
+
+Acceptance criteria and commands are in [container runtime](container-runtime.md). The multi-stage Dockerfile builds both modules with Java 17 and copies only the executable service JAR into a non-root JRE runtime. Compose uses the repository root as build context, maps localhost:8080, and runs one stateless service with `restart: unless-stopped`.
+
+The original service-directory build-context checklist conflicts with the sibling core dependency. The documented command uses `docker build -f session-manager-service/Dockerfile ... .` from the root, and Compose uses the same context.
+
+Before implementation, `docker compose config --quiet` failed because no configuration existed. The new configuration passes, as do actionlint and shell syntax validation. Official base-image tags were verified through public registry manifests. Local Docker build is blocked by daemon socket permissions, so container execution and the <300 MB image requirement remain unverified. A dedicated CI job will build/start Compose, check runtime size and user/JRE properties, exercise the HTTP sample, and clean up.
+
+The new reusable HTTP smoke script passes against the executable service JAR. That verifies its sample and assertions while preserving the separate Docker runtime verification gate.

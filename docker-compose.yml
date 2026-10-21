@@ -1,0 +1,9 @@
+services:
+  session-manager-service:
+    build:
+      context: .
+      dockerfile: session-manager-service/Dockerfile
+    image: session-manager-service:local
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped

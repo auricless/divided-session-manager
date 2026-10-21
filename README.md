@@ -10,7 +10,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Automated review and merge gates remain before Phase 1A is complete. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API with real HTTP tests. Agent review and merge are pending. |
-| Docker and Compose | Not implemented. |
+| Docker and Compose | Multi-stage JRE image, local stack, and CI smoke check are prepared. Docker build/runtime/size verification and review remain pending. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
 
 ## What the core accepts and returns
@@ -106,6 +106,8 @@ mvn spring-boot:run
 Alternatively, after packaging, run `java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar` from the repository root. Stop the process with Ctrl+C.
 
 POST the [sample request](session-manager-service/examples/assign-request.json) to `/api/v1/sessions/assign`; see the [API contract and curl instructions](docs/assignment-api.md). Successful computations return final assignments or proposals with blockers. Invalid input returns HTTP 400 with a clean message. The service stores no event or attendee data.
+
+For the container setup, run `docker compose up --build` from the repository root and use the same sample on localhost:8080. See [container commands and verification status](docs/container-runtime.md).
 
 Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 
