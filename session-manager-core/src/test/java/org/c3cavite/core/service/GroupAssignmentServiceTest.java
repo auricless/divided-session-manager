@@ -81,6 +81,7 @@ class GroupAssignmentServiceTest {
         assertEquals(1, result.getTotalGroups());
         assertEquals(2, result.getTotalAssignedParticipants());
         assertEquals(2, result.getGroups().get(0).getParticipants().size());
+        assertEquals(AssignmentState.FINAL, result.getState());
     }
 
     @Test
@@ -124,5 +125,24 @@ class GroupAssignmentServiceTest {
         assertEquals(2, result.getTotalGroups());
         assertEquals(5, result.getGroups().get(0).getParticipants().size());
         assertEquals(5, result.getGroups().get(1).getParticipants().size());
+    }
+
+    @Test
+    void shortageReturnsAProposalWithAGroupBlocker() {
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                List.of(new Participant("Attendee", 17, Gender.MALE, null)), List.of());
+
+        assertEquals(AssignmentState.NON_FINAL_PROPOSAL, result.getState());
+        assertEquals(AssignmentBlocker.Code.MISSING_LEADER, result.getBlockers().get(0).getCode());
+        assertEquals(1, result.getBlockers().get(0).getGroupNumber());
+    }
+
+    @Test
+    void emptyInputReturnsAnEmptyFinalResult() {
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(), List.of(), List.of());
+
+        assertTrue(result.isFinal());
+        assertTrue(result.getGroups().isEmpty());
+        assertTrue(result.getBlockers().isEmpty());
     }
 }

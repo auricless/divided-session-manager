@@ -13,7 +13,7 @@ public class Facilitator {
         this.name = name;
         this.role = role;
         this.gender = gender;
-        this.qualifiedTiers = qualifiedTiers != null ? Collections.unmodifiableList(qualifiedTiers) : Collections.emptyList();
+        this.qualifiedTiers = qualifiedTiers != null ? List.copyOf(qualifiedTiers) : Collections.emptyList();
     }
 
     public String getName() {
