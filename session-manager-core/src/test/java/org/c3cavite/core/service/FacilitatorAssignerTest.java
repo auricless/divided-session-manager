@@ -152,4 +152,22 @@ class FacilitatorAssignerTest {
         assertThrows(IllegalArgumentException.class, () -> assigner.assign(List.of(), List.of(leader), config,
                 List.of(exception, exception)));
     }
+
+    @Test
+    void reusingGroupsDoesNotRetainStaffWhoseExceptionWasRemoved() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS));
+        Facilitator assistant = new Facilitator("Assistant", Role.ASSISTANT, Gender.FEMALE, List.of(AgeTier.TEENS));
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+        List<Facilitator> roster = List.of(leader, assistant);
+        assigner.assign(List.of(group), roster, config, List.of(
+                new FacilitatorException(leader, false, true), new FacilitatorException(assistant, false, true)));
+        assertEquals(leader, group.getLeader());
+        assertEquals(assistant, group.getAssistant());
+
+        assigner.assign(List.of(group), roster, config);
+
+        assertNull(group.getLeader());
+        assertNull(group.getAssistant());
+    }
 }
