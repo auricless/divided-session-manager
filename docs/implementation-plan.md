@@ -118,3 +118,11 @@ TDD: the startup test first failed because no Spring Boot application configurat
 CLI smoke checks started both `mvn spring-boot:run` from the service module and the packaged JAR on port 8080, verified the expected HTTP 404 before endpoints exist, and stopped both processes. The core dependency tree contains only test-scoped JUnit dependencies and no Spring dependencies.
 
 This branch still requires automated PR review; the API quota blocker remains independent of local test success.
+
+## Phase 1B assignment API: SM-21
+
+The [API contract](assignment-api.md) records the acceptance criteria and runnable sample. Separate request/response DTOs and a mapper keep HTTP concerns outside the core; the controller delegates assignment decisions. Exceptions select an exact roster instance through a zero-based request index.
+
+TDD: all 25 initial HTTP cases failed with 404 before the endpoint existed. After implementation they passed. Six additional cases then exposed silent Jackson coercion of fractional caps/ages, numeric enum ordinals, numeric strings, and string boolean flags. The service now rejects those types using Jackson 3 settings. Full Maven verify passes 144 tests (112 core, 32 service), including final/proposal states, exceptions and their withdrawal, role preservation, custom boundaries, life stages, caps, exclusions, empty input, and clean invalid-input responses.
+
+A CLI smoke run using `mvn spring-boot:run` on port 8080 and the documented curl sample returned FINAL with one staffed group and two participants. A missing-cap request returned HTTP 400 with a capSize message and no stack trace. This implementation is pending agent review; the user has temporarily returned to our own agent review because no API credits are available.
