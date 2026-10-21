@@ -16,8 +16,9 @@ public class GroupAssignmentService {
 
         // 1. Separate valid participants
         List<Participant> validParticipants = new ArrayList<>();
-        for (Participant p : participants) {
-            AgeTier ageTier = p.getAgeTier(config);
+        for (Participant input : participants) {
+            Participant p = input.forSession(config);
+            AgeTier ageTier = p.getAgeTier();
             if (ageTier == null) {
                 unassigned.add(new UnassignedParticipant(p, p.getAge() < AgeTier.TEENS.getMinAge()
                         ? "Age under 13 or outside supported range" : "UNKNOWN_TIER"));

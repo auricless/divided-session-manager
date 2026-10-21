@@ -10,6 +10,10 @@ public class Participant {
     private final AgeTier ageTier;
 
     public Participant(String name, int age, Gender gender, LifeStage lifeStage) {
+        this(name, age, gender, lifeStage, AgeTier.fromAge(age).orElse(null));
+    }
+
+    private Participant(String name, int age, Gender gender, LifeStage lifeStage, AgeTier ageTier) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name cannot be null or blank");
         }
@@ -20,7 +24,7 @@ public class Participant {
         this.age = age;
         this.gender = gender;
         this.lifeStage = lifeStage;
-        this.ageTier = AgeTier.fromAge(age).orElse(null);
+        this.ageTier = ageTier;
     }
 
     public String getName() {
@@ -39,13 +43,19 @@ public class Participant {
         return lifeStage;
     }
 
+    /** Returns the tier captured when constructed or derived for an assignment session. */
     public AgeTier getAgeTier() {
         return ageTier;
     }
 
-    /** Uses the current event rules; the no-argument getter retains the default age bands. */
+    /** Resolves the tier against the supplied event without changing this value. */
     public AgeTier getAgeTier(SessionConfig config) {
         return config.ageTierFor(age).orElse(null);
+    }
+
+    /** Returns an immutable copy with this event's tier, leaving the input reusable. */
+    public Participant forSession(SessionConfig config) {
+        return new Participant(name, age, gender, lifeStage, getAgeTier(config));
     }
 
     @Override

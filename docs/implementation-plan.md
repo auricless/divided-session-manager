@@ -15,6 +15,7 @@ Acceptance criteria:
 - Support immutable per-event age boundaries, retaining 13–15 / 16–22 / 23+ defaults; reject missing ranges, gaps, overlaps, and reversed ranges (CFG-04/06).
 - Resolve participant tiers against the current session during segmentation and assignment, including active-tier filtering (PRT-02).
 - Preserve the existing factory and default participant getter for existing callers; add session-aware tier lookup.
+- Return participant copies with the session's derived tier while preserving reusable input values and previous results.
 - Complete participant value-object validation and equality from SM-8; leave positive under-13 ages available for unassigned reporting (PRT-05).
 - Verify with failing tests before implementation, then the full Maven reactor.
 
@@ -32,7 +33,12 @@ TDD evidence:
 - After integrating session-aware lookup, all 65 tests passed with zero failures or errors.
 - Full `mvn verify` passed and built both module JARs on Java 21 with the existing Java 17 source/target settings. The service JAR remains an empty placeholder.
 
-Iteration 1 is implemented and verified; review is pending. No coverage claim is made yet.
+Self-review pass 1 found an inconsistent output contract: group metadata used the event's tier,
+but returned participant records exposed cached default tiers. Three failing regression tests
+confirmed assigned and unassigned output mismatches and reuse across sessions. The fix returns
+immutable session-specific participant copies. Full Maven verification then passed all 66 tests.
+
+Iteration 1 is implemented and verified; user review is pending. No coverage claim is made yet.
 
 ## Next iterations
 

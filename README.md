@@ -36,7 +36,7 @@ SessionConfig custom = SessionConfig.builder()
         .build();
 ```
 
-`SessionConfig.create(...)` remains available for explicit settings. Configuration copies its collections so later caller changes cannot alter a built session. `Participant.getAgeTier(config)` resolves the tier for an event; the existing no-argument getter and `AgeTier.fromAge(...)` retain the default bands. Segmentation and assignment always use the event's configuration. Participant values reject blank names and nonpositive ages; their equality includes name, age, gender, and life stage.
+`SessionConfig.create(...)` remains available for explicit settings. Configuration copies its collections so later caller changes cannot alter a built session. `Participant.getAgeTier(config)` resolves the tier for an event. Newly constructed input participants and `AgeTier.fromAge(...)` use the default bands. Assignment results contain immutable participant copies whose no-argument `getAgeTier()` exposes the session's derived tier, including no tier for an attendee outside the configured ranges. Original inputs remain unchanged and reusable across sessions. Segmentation and assignment always use the event's configuration. Participant values reject blank names and nonpositive ages; their equality includes name, age, gender, and life stage.
 
 ## Current assignment behavior
 
