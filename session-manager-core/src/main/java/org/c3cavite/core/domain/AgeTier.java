@@ -16,6 +16,7 @@ public enum AgeTier {
         this.maxAge = maxAge;
     }
 
+    /** Resolves the default age bands; event-specific lookup belongs to SessionConfig. */
     public static Optional<AgeTier> fromAge(int age) {
         return Arrays.stream(values())
                 .filter(tier -> age >= tier.minAge && age <= tier.maxAge)
