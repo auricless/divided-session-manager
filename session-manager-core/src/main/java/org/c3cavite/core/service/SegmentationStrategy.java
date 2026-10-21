@@ -13,12 +13,12 @@ public class SegmentationStrategy {
         Map<SegmentKey, List<Participant>> segments = new HashMap<>();
 
         for (Participant p : participants) {
-            if (p.getAgeTier() == null || !config.getActiveTiers().contains(p.getAgeTier())) {
+            AgeTier segmentTier = p.getAgeTier(config);
+            if (segmentTier == null || !config.getActiveTiers().contains(segmentTier)) {
                 continue;
             }
 
             Gender segmentGender = (config.getGenderMode() == GenderMode.SEPARATED) ? p.getGender() : null;
-            AgeTier segmentTier = p.getAgeTier();
             LifeStage segmentLifeStage = (config.isLifeStageSubgroupingEnabled() && segmentTier == AgeTier.YOUNG_ADULT) 
                     ? p.getLifeStage() : null;
 

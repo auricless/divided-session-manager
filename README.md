@@ -17,11 +17,26 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 `GroupAssignmentService.assign(config, participants, facilitators)` accepts a `SessionConfig`, attendees, and facilitators. It returns an `AssignmentResult` with groups, unassigned attendees with reasons, and warnings. Facilitators do not count toward participant group size.
 
-The current configuration specifies a gender mode (`SEPARATED` or `MIXED`), target and maximum participant counts per group, active age tiers, and whether to split Young Adults by life stage. There is no stored event, registration process, user interface, or default configuration in the code.
+Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. There is no stored event, registration process, or user interface.
 
-Current age tiers are Teens (13–15), Youth (16–22), and Young Adults (23+). Attendees under 13 or in an inactive tier are returned as unassigned. For Young Adults, the life-stage values are `STUDENT` and `WORKING_PROFESSIONAL`. The first-release defaults use `MALE` and `FEMALE` gender values, these age bands, and a Young Adult life-stage split that organizers can turn off per event. The intended core must let organizers configure age-tier boundaries per event; the current `AgeTier` enum does not.
+Default age tiers are Teens (13–15), Youth (16–22), and Young Adults (23+). Per-session inclusive ranges can override these boundaries. All three ranges must be present, ordered, and contiguous, with no overlaps. Ranges start at 13 or above; attendees outside the configured interval or in an inactive tier are returned as unassigned. For Young Adults, the life-stage values are `STUDENT` and `WORKING_PROFESSIONAL`.
 
-The draft SRS specifies `SEPARATED` gender mode and target size 4 as defaults, with a cap supplied for each event. The current `SessionConfig` requires callers to supply all of these values and the life-stage toggle; it does not apply defaults itself.
+```java
+SessionConfig defaults = SessionConfig.builder().capSize(6).build();
+
+SessionConfig custom = SessionConfig.builder()
+        .capSize(8)
+        .targetSize(5)
+        .genderMode(GenderMode.MIXED)
+        .lifeStageSubgroupingEnabled(false)
+        .ageTierBoundaries(Map.of(
+                AgeTier.TEENS, new AgeRange(13, 17),
+                AgeTier.YOUTH, new AgeRange(18, 25),
+                AgeTier.YOUNG_ADULT, new AgeRange(26, Integer.MAX_VALUE)))
+        .build();
+```
+
+`SessionConfig.create(...)` remains available for explicit settings. Configuration copies its collections so later caller changes cannot alter a built session. `Participant.getAgeTier(config)` resolves the tier for an event. Newly constructed input participants and `AgeTier.fromAge(...)` use the default bands. Assignment results contain immutable participant copies whose no-argument `getAgeTier()` exposes the session's derived tier, including no tier for an attendee outside the configured ranges. Original inputs remain unchanged and reusable across sessions. Segmentation and assignment always use the event's configuration. Participant values reject blank names and nonpositive ages; their equality includes name, age, gender, and life stage.
 
 ## Current assignment behavior
 
@@ -31,13 +46,13 @@ The draft SRS specifies `SEPARATED` gender mode and target size 4 as defaults, w
 4. Leaders and then optional assistants are assigned from the supplied lists. Qualification by age tier is required. In separated mode, a matching facilitator gender is preferred, but a different gender is currently accepted.
 5. A group without a qualified available leader remains in the result with a `null` leader and a warning. This is current behavior. The intended behavior is to return a **non-final proposal** showing the shortage so an admin can resolve it. An admin may explicitly assign a facilitator despite the normal age-tier qualification or gender preference. A leaderless group must never be finalized, and the engine must not automatically relax a demographic boundary. An explicit override flag is enough for the first release; a reason is not required.
 
-The code processes Youth segments first. The current result has no explicit draft/final state or override workflow. `SessionConfig.create(...)` checks positive target size, target no larger than cap, and a nonempty active-tier list. Other inputs are not comprehensively validated yet.
+The code processes Youth segments first. The current result has no explicit draft/final state or override workflow. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
 
 ## Gaps against the first-release requirements
 
 | Requirement | Current state |
 | --- | --- |
-| Configurable age-tier boundaries (NFR 5.3) | Required for the first release; boundaries are currently fixed in `AgeTier`. |
+| Configurable age-tier boundaries (CFG-04/06, PRT-02, NFR 5.3) | Implemented per session, including validation and assignment integration; defaults remain in `AgeTier`. |
 | No one-person group when a segment has multiple groups (ALG-08) | The current group-count and distribution logic can produce one. |
 | At least 80% core algorithm test coverage (NFR 5.3) | Tests exist; coverage has not been measured here. |
 | Review and overrides | The first-release core must accept explicit organizer overrides and recompute or validate assignments; the precise input and result contract is still being decided. |
@@ -52,7 +67,7 @@ The code processes Youth segments first. The current result has no explicit draf
 
 - Which other overrides can an admin make, such as moving one attendee or merging groups? The configured cap remains hard for a run; an organizer may change the event cap and rerun. Override inputs need an explicit flag, but no reason in the first release.
 - How should the engine represent a non-final proposal, its blockers, and the explicit facilitator exception in its result and inputs?
-- How should the engine validate configurable age-tier boundaries (for example, gaps or overlaps), and what are the permitted limits on participant-level overrides?
+- What are the permitted limits on participant-level overrides?
 - What should happen when age, gender, or Young Adult life stage is missing, and how are walk-ins or edits handled after groups are formed?
 - Which later platform features are essential for the first real event, and what attendee data must be retained?
 

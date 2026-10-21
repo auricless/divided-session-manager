@@ -14,6 +14,34 @@ class SegmentationStrategyTest {
     private final SegmentationStrategy strategy = new SegmentationStrategy();
 
     @Test
+    void segmentsByConfiguredTierAndLifeStageRatherThanCachedDefaultTier() {
+        SessionConfig config = SessionConfig.builder().capSize(6).ageTierBoundaries(Map.of(
+                AgeTier.TEENS, new AgeRange(13, 17), AgeTier.YOUTH, new AgeRange(18, 20),
+                AgeTier.YOUNG_ADULT, new AgeRange(21, Integer.MAX_VALUE))).build();
+        Participant teen = new Participant("Teen", 16, Gender.MALE, null);
+        Participant adult = new Participant("Adult", 21, Gender.MALE, LifeStage.STUDENT);
+
+        Map<SegmentKey, List<Participant>> result = strategy.segment(List.of(teen, adult), config);
+
+        assertEquals(List.of(teen), result.get(new SegmentKey(Gender.MALE, AgeTier.TEENS, null)));
+        assertEquals(List.of(adult), result.get(new SegmentKey(Gender.MALE, AgeTier.YOUNG_ADULT, LifeStage.STUDENT)));
+    }
+
+    @Test
+    void canDisableLifeStageSplit() {
+        SessionConfig config = SessionConfig.builder().capSize(6).genderMode(GenderMode.MIXED)
+                .lifeStageSubgroupingEnabled(false).build();
+        List<Participant> participants = List.of(
+                new Participant("Student", 24, Gender.MALE, LifeStage.STUDENT),
+                new Participant("Worker", 25, Gender.FEMALE, LifeStage.WORKING_PROFESSIONAL));
+
+        Map<SegmentKey, List<Participant>> result = strategy.segment(participants, config);
+
+        assertEquals(1, result.size());
+        assertEquals(participants, result.get(new SegmentKey(null, AgeTier.YOUNG_ADULT, null)));
+    }
+
+    @Test
     @DisplayName("Given SEPARATED gender mode, when segment is called, then partition by gender and tier")
     void testSegmentSeparatedGender() {
         SessionConfig config = SessionConfig.create(GenderMode.SEPARATED, 5, 8, List.of(AgeTier.TEENS), false);
