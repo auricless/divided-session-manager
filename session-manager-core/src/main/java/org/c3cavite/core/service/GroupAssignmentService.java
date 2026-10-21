@@ -11,6 +11,12 @@ public class GroupAssignmentService {
     private final FacilitatorAssigner facilitatorAssigner = new FacilitatorAssigner();
 
     public AssignmentResult assign(SessionConfig config, List<Participant> participants, List<Facilitator> facilitators) {
+        return assign(config, participants, facilitators, List.of());
+    }
+
+    public AssignmentResult assign(SessionConfig config, List<Participant> participants, List<Facilitator> facilitators,
+                                   List<FacilitatorException> exceptions) {
+        FacilitatorEligibility eligibility = new FacilitatorEligibility(config, facilitators, exceptions);
         List<UnassignedParticipant> unassigned = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
@@ -54,7 +60,7 @@ public class GroupAssignmentService {
 
             // Consolidation logic: if we have more groups than qualified leaders, try to reduce groupCount
             long qualifiedLeaderCount = availableLeaders.stream()
-                    .filter(f -> f.getQualifiedTiers().contains(key.ageTier()))
+                    .filter(f -> eligibility.permits(f, Role.LEADER, key.ageTier(), key.gender()))
                     .count();
             
             if (groupCount > qualifiedLeaderCount && qualifiedLeaderCount > 0) {
@@ -78,7 +84,7 @@ public class GroupAssignmentService {
         }
 
         // 4. Assign Facilitators
-        warnings.addAll(facilitatorAssigner.assign(allGroups, facilitators, config));
+        warnings.addAll(facilitatorAssigner.assign(allGroups, facilitators, eligibility));
 
         return new AssignmentResult(allGroups, unassigned, warnings, config.getCapSize());
     }
