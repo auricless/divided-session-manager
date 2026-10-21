@@ -97,4 +97,4 @@ Keep each iteration reviewable in a PR. Tickets move to In Review after verifica
 
 TDD found four model validation/equality failures in 103 tests. New size/setter and session-aware participant validation tests preceded their APIs. The model update validates facilitator fields and qualifications, implements value equality, guards group roles and null attendees, exposes size/setter aliases, requires participant gender, and validates Young Adult life stage against the event tier. All 106 tests and full Maven verification pass. Existing Role enum naming is retained for compatibility.
 
-Work is saved on fix/domain-validation. Per the user's updated review workflow, subsequent PR reviews will be performed by GitHub Actions instead of local agent review. Automated-review setup is the next priority.
+Work is in PR #8 on fix/domain-validation, awaiting current-head CI and native Codex review. PR #7 established subscription-backed GitHub review and API-free Maven verification in Actions. Subsequent changes use that native review and TDD fix cycle rather than duplicate local review.
