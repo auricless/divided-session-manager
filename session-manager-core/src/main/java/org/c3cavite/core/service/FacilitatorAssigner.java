@@ -42,7 +42,7 @@ public class FacilitatorAssigner {
             }
             if (role == Role.LEADER) group.assignLeader(facilitator);
             else group.assignAssistant(facilitator);
-            available.remove(facilitator);
+            available.removeIf(candidate -> candidate == facilitator);
             if (eligibility.exceptionCount(facilitator, group.getAgeTierTarget(), group.getGenderTarget()) > 0) {
                 warnings.add("Organizer exception used for " + role + " " + facilitator.getName() + " in group "
                         + (i + 1) + ": " + eligibility.exceptionDescription(facilitator,

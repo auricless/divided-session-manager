@@ -92,3 +92,9 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 - SM-18: measure and enforce at least 80% coverage of the core algorithm package.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
+
+## Model audit: SM-8 / SM-9 / SM-11
+
+TDD found four model validation/equality failures in 103 tests. New size/setter and session-aware participant validation tests preceded their APIs. The model update validates facilitator fields and qualifications, implements value equality, guards group roles and null attendees, exposes size/setter aliases, requires participant gender, and validates Young Adult life stage against the event tier. All 106 tests and full Maven verification pass. Existing Role enum naming is retained for compatibility.
+
+Work is saved on fix/domain-validation. Per the user's updated review workflow, subsequent PR reviews will be performed by GitHub Actions instead of local agent review. Automated-review setup is the next priority.

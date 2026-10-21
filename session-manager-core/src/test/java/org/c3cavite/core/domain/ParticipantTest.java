@@ -54,4 +54,19 @@ class ParticipantTest {
         assertNotEquals(first, new Participant("Attendee", 25, Gender.MALE, LifeStage.WORKING_PROFESSIONAL));
         assertTrue(first.toString().contains("Attendee"));
     }
+
+    @Test
+    void rejectsMissingGender() {
+        assertThrows(IllegalArgumentException.class, () -> new Participant("Attendee", 17, null, null));
+    }
+
+    @Test
+    void youngAdultLifeStageIsValidatedAgainstTheSessionTier() {
+        Participant attendee = new Participant("Attendee", 21, Gender.MALE, null);
+        SessionConfig custom = SessionConfig.builder().capSize(6).ageTierBoundaries(Map.of(
+                AgeTier.TEENS, new AgeRange(13, 15), AgeTier.YOUTH, new AgeRange(16, 20),
+                AgeTier.YOUNG_ADULT, new AgeRange(21, Integer.MAX_VALUE))).build();
+        assertThrows(IllegalArgumentException.class, () -> attendee.forSession(custom));
+        assertEquals(AgeTier.YOUTH, attendee.forSession(SessionConfig.builder().capSize(6).build()).getAgeTier());
+    }
 }

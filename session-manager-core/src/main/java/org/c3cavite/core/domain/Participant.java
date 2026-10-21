@@ -20,6 +20,7 @@ public class Participant {
         if (age < 1) {
             throw new IllegalArgumentException("age must be greater than 0");
         }
+        if (gender == null) throw new IllegalArgumentException("gender is required");
         this.name = name;
         this.age = age;
         this.gender = gender;
@@ -55,7 +56,11 @@ public class Participant {
 
     /** Returns an immutable copy with this event's tier, leaving the input reusable. */
     public Participant forSession(SessionConfig config) {
-        return new Participant(name, age, gender, lifeStage, getAgeTier(config));
+        AgeTier sessionTier = getAgeTier(config);
+        if (sessionTier == AgeTier.YOUNG_ADULT && lifeStage == null) {
+            throw new IllegalArgumentException("Young Adult participants require a life stage for this session");
+        }
+        return new Participant(name, age, gender, lifeStage, sessionTier);
     }
 
     @Override
