@@ -17,10 +17,12 @@ public class GroupAssignmentService {
         // 1. Separate valid participants
         List<Participant> validParticipants = new ArrayList<>();
         for (Participant p : participants) {
-            if (p.getAgeTier() == null) {
-                unassigned.add(new UnassignedParticipant(p, "Age under 13 or outside supported range"));
-            } else if (!config.getActiveTiers().contains(p.getAgeTier())) {
-                unassigned.add(new UnassignedParticipant(p, "Age tier " + p.getAgeTier() + " is not active for this session"));
+            AgeTier ageTier = p.getAgeTier(config);
+            if (ageTier == null) {
+                unassigned.add(new UnassignedParticipant(p, p.getAge() < AgeTier.TEENS.getMinAge()
+                        ? "Age under 13 or outside supported range" : "UNKNOWN_TIER"));
+            } else if (!config.getActiveTiers().contains(ageTier)) {
+                unassigned.add(new UnassignedParticipant(p, "Age tier " + ageTier + " is not active for this session"));
             } else {
                 validParticipants.add(p);
             }
