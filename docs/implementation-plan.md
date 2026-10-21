@@ -52,6 +52,22 @@ Acceptance criteria:
 
 TDD: the four initial immutability regression tests fail in the 70-test suite. State/blocker and service tests were added before their APIs.
 After implementation, all 77 tests and full Maven verification pass. The result copies group contents, protects mutation methods, and defensively copies facilitator qualification lists. No dependencies were added.
+PR #4 passed agent review and was merged; SM-12 is Done.
+
+## Iteration 3: explicit facilitator exceptions (SM-14 / SM-28)
+
+The SRS is the ultimate design authority. The older SM-28 body allows automatic gender fallback; the current SRS FAC-04/05 and ticket Notes require an explicit exception, which this iteration follows.
+
+Acceptance criteria:
+
+- Require age-tier qualification and matching gender in SEPARATED mode for leaders and assistants by default.
+- Allow independent, explicit qualification/gender exceptions for a specific roster instance for one run, without a reason field.
+- Never waive role, participant demographics, or the hard cap; never reuse a roster instance for multiple groups.
+- Prefer staff needing no exception and report applied exceptions in warnings.
+- Reuse the same eligibility rules for consolidation counts and assignment.
+
+TDD: three regressions failed in 80 tests before implementation. New exception tests preceded their APIs. Initial implementation passes all 87 tests and full Maven verification.
+PR #5 review pass 1 identified stale role assignments when callers reuse a Group after withdrawing exceptions. One regression failed in 88 tests before clearing unfilled role slots on recomputation.
 
 ## Next iterations
 

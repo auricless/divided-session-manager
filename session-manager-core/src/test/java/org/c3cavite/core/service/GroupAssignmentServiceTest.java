@@ -145,4 +145,31 @@ class GroupAssignmentServiceTest {
         assertTrue(result.getGroups().isEmpty());
         assertTrue(result.getBlockers().isEmpty());
     }
+
+    @Test
+    void genderMismatchCannotSilentlyFinalizeASeparatedGroup() {
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(6).build(),
+                List.of(new Participant("Attendee", 17, Gender.MALE, null)),
+                List.of(new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.YOUTH))));
+
+        assertFalse(result.isFinal());
+        assertNull(result.getGroups().get(0).getLeader());
+    }
+
+    @Test
+    void explicitExceptionsResolveShortageOnlyForTheCurrentRun() {
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+        List<Participant> participants = List.of(new Participant("Attendee", 17, Gender.MALE, null));
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS));
+
+        AssignmentResult allowed = service.assign(config, participants, List.of(leader),
+                List.of(new FacilitatorException(leader, true, true)));
+        AssignmentResult unchanged = service.assign(config, participants, List.of(leader));
+
+        assertTrue(allowed.isFinal());
+        assertEquals(leader, allowed.getGroups().get(0).getLeader());
+        assertFalse(unchanged.isFinal());
+        assertTrue(allowed.getWarnings().stream().anyMatch(w -> w.contains("exception")));
+        assertEquals(List.of(AgeTier.TEENS), leader.getQualifiedTiers());
+    }
 }

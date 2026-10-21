@@ -3,61 +3,55 @@ package org.c3cavite.core.service;
 import org.c3cavite.core.domain.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class FacilitatorAssigner {
 
     public List<String> assign(List<Group> groups, List<Facilitator> facilitators, SessionConfig config) {
+        return assign(groups, facilitators, config, List.of());
+    }
+
+    public List<String> assign(List<Group> groups, List<Facilitator> facilitators, SessionConfig config,
+                               List<FacilitatorException> exceptions) {
+        return assign(groups, facilitators, new FacilitatorEligibility(config, facilitators, exceptions));
+    }
+
+    List<String> assign(List<Group> groups, List<Facilitator> facilitators, FacilitatorEligibility eligibility) {
         List<String> warnings = new ArrayList<>();
         List<Facilitator> available = new ArrayList<>(facilitators);
-
-        // 1. Assign Leaders
-        for (Group group : groups) {
-            Optional<Facilitator> leader = findBestFacilitator(available, Role.LEADER, group);
-            if (leader.isPresent()) {
-                group.assignLeader(leader.get());
-                available.remove(leader.get());
-            } else {
-                warnings.add("Group for " + group.getAgeTierTarget() + 
-                             (group.getGenderTarget() != null ? " (" + group.getGenderTarget() + ")" : "") + 
-                             " is leaderless.");
-            }
-        }
-
-        // 2. Assign Assistants
-        for (Group group : groups) {
-            Optional<Facilitator> assistant = findBestFacilitator(available, Role.ASSISTANT, group);
-            if (assistant.isPresent()) {
-                group.assignAssistant(assistant.get());
-                available.remove(assistant.get());
-            }
-        }
-
+        assignRole(groups, available, eligibility, Role.LEADER, warnings);
+        assignRole(groups, available, eligibility, Role.ASSISTANT, warnings);
         return warnings;
     }
 
-    private Optional<Facilitator> findBestFacilitator(List<Facilitator> available, Role role, Group group) {
-        List<Facilitator> candidates = available.stream()
-                .filter(f -> f.getRole() == role)
-                .filter(f -> f.getQualifiedTiers().contains(group.getAgeTierTarget()))
-                .collect(Collectors.toList());
-
-        if (candidates.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // Prefer gender match if target is set
-        if (group.getGenderTarget() != null) {
-            Optional<Facilitator> genderMatch = candidates.stream()
-                    .filter(f -> f.getGender() == group.getGenderTarget())
-                    .findFirst();
-            if (genderMatch.isPresent()) {
-                return genderMatch;
+    private void assignRole(List<Group> groups, List<Facilitator> available, FacilitatorEligibility eligibility,
+                            Role role, List<String> warnings) {
+        for (int i = 0; i < groups.size(); i++) {
+            Group group = groups.get(i);
+            Optional<Facilitator> selected = available.stream()
+                    .filter(f -> eligibility.permits(f, role, group.getAgeTierTarget(), group.getGenderTarget()))
+                    .min(Comparator.comparingInt(f -> eligibility.exceptionCount(f,
+                            group.getAgeTierTarget(), group.getGenderTarget())));
+            if (selected.isEmpty()) {
+                if (role == Role.LEADER) {
+                    group.assignLeader(null);
+                    warnings.add("Group " + (i + 1) + " for " + group.getAgeTierTarget() + " is leaderless.");
+                } else {
+                    group.assignAssistant(null);
+                }
+                continue;
+            }
+            Facilitator facilitator = selected.get();
+            if (role == Role.LEADER) group.assignLeader(facilitator);
+            else group.assignAssistant(facilitator);
+            available.remove(facilitator);
+            if (eligibility.exceptionCount(facilitator, group.getAgeTierTarget(), group.getGenderTarget()) > 0) {
+                warnings.add("Organizer exception used for " + role + " " + facilitator.getName() + " in group "
+                        + (i + 1) + ": " + eligibility.exceptionDescription(facilitator,
+                                group.getAgeTierTarget(), group.getGenderTarget()) + ".");
             }
         }
-
-        return candidates.stream().findFirst();
     }
 }

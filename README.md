@@ -45,8 +45,17 @@ SessionConfig custom = SessionConfig.builder()
 1. Eligible attendees are segmented by age tier, by gender when `SEPARATED`, and by Young Adult life stage when enabled.
 2. Each segment starts with `ceil(attendee count / target size)` groups. Attendees are distributed evenly within that segment.
 3. When that count exceeds the number of available leaders qualified for the segment's tier, the engine may reduce the group count toward the configured cap. This calculation does not reserve leaders across segments.
-4. Leaders and then optional assistants are assigned from the supplied lists. Qualification by age tier is required. In separated mode, a matching facilitator gender is preferred, but a different gender is currently accepted.
-5. A group without a leader remains in a **non-final proposal**, with a warning and an actionable blocker. Explicit facilitator exceptions are the next iteration; a leaderless group cannot be finalized.
+4. Leaders and then optional assistants are assigned from the supplied lists. Age-tier qualification and, in separated mode, matching facilitator gender are required unless explicitly waived for that facilitator. Candidates needing no exception are preferred. Each roster instance can staff at most one group; duplicate instances are rejected.
+5. A group without a leader remains in a **non-final proposal**, with a warning and an actionable blocker. A leaderless group cannot be finalized.
+
+For a run with organizer exceptions, use the four-argument overload. Each exception refers to the exact facilitator instance in that run's roster and independently permits an age-tier or gender mismatch. It never changes a facilitator's role, participant segmentation, or the hard cap. No reason field is required. Applied exceptions appear in result warnings; a later run without exceptions restores the default rules.
+
+```java
+FacilitatorException permission = new FacilitatorException(leader,
+        false, // keep age-tier qualification required
+        true); // explicitly permit this facilitator's gender mismatch
+AssignmentResult result = service.assign(config, participants, facilitators, List.of(permission));
+```
 
 The code processes Youth segments first. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
 
@@ -57,7 +66,7 @@ The code processes Youth segments first. Configuration checks the required posit
 | Configurable age-tier boundaries (CFG-04/06, PRT-02, NFR 5.3) | Implemented per session, including validation and assignment integration; defaults remain in `AgeTier`. |
 | No one-person group when a segment has multiple groups (ALG-08) | The current group-count and distribution logic can produce one. |
 | At least 80% core algorithm test coverage (NFR 5.3) | Tests exist; coverage has not been measured here. |
-| Review and overrides | The first-release core must accept explicit organizer overrides and recompute or validate assignments; the precise input and result contract is still being decided. |
+| Review and overrides | Explicit facilitator qualification/gender exceptions are supported through a run-scoped overload. Further participant-level editing remains outside the first release. |
 
 ## Project plan
 
@@ -68,7 +77,6 @@ The code processes Youth segments first. Configuration checks the required posit
 ## Decisions to resolve
 
 - Which other overrides can an admin make, such as moving one attendee or merging groups? The configured cap remains hard for a run; an organizer may change the event cap and rerun. Override inputs need an explicit flag, but no reason in the first release.
-- How should the explicit facilitator exception be represented in assignment inputs?
 - What are the permitted limits on participant-level overrides?
 - What should happen when age, gender, or Young Adult life stage is missing, and how are walk-ins or edits handled after groups are formed?
 - Which later platform features are essential for the first real event, and what attendee data must be retained?
