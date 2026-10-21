@@ -28,8 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+      - name: Require the proposed merge commit
+        env:
+          PR_MERGE_SHA: ${{ github.sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$PR_MERGE_SHA" ]; then
+            echo '::error::Container verification must test the proposed merge with the base branch.'
+            exit 1
+          fi
       - name: Validate Compose configuration
         run: docker compose config --quiet
       - name: Build and start the service
