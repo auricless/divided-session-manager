@@ -1,35 +1,40 @@
 # Automated PR reviews
 
-`.github/workflows/pr-review.yml` replaces local manual agent reviews with GitHub Actions review on opened, reopened, updated, and ready PRs.
+PRs use Codex's subscription-backed GitHub integration for review, and GitHub Actions for tests. No OpenAI API key is used by `.github/workflows/pr-review.yml`.
 
-1. **Maven and publisher tests** runs `mvn verify` on Java 17 and the Node test suite for publishing reviews.
-2. **Codex analysis** uses the official [OpenAI Codex Action](https://developers.openai.com/codex/github-action/) in a read-only permission profile with sudo privileges dropped. It reads the full changelist, surrounding source, and the versioned SRS requirements snapshot. Its priorities are human readability, extensibility, security, performance, and correctness.
-3. **Codex review** validates the structured result and current PR head, posts actionable findings as inline review threads where the diff supports them, and fails if any findings remain. Non-commentable findings remain visible in the summary and still fail the check. Failed tests, failed analysis, invalid output, and publication errors cannot produce a passing verdict.
+## Enable the GitHub integration
 
-The workflow posts `COMMENT` reviews and exposes its verdict as the **Codex review** check. It does not need GitHub's permission to issue formal approval reviews. Existing branch protection remains unchanged; require this check in a branch ruleset if merges must be enforced by GitHub itself.
+An account with repository push/admin permission must configure the connected repository in [Codex review settings](https://chatgpt.com/settings/code-review):
 
-## Credentials and trust
+1. Connect `auricless/divided-session-manager` to Codex if it is not already connected.
+2. Choose the repository and enable **Automatic review** under **Review code**.
+3. For an existing PR, or after pushing a fix, post `@codex review` to request a review of its current head. Verify the bot responds and completes the review; a request comment alone is not a completed review.
 
-Configure `OPENAI_API_KEY` as a **repository Actions secret**. A key stored only in the `prod` environment is not used: that environment permits protected branches, while PR jobs run against PR refs. The workflow does not change production environment policies or deploy the application.
+The setting lives in the Codex account, not in this repository's YAML. Repository files cannot enable it on their own. See [OpenAI's GitHub review setup](https://learn.chatgpt.com/docs/third-party/github).
 
-Only repository branches receive automatic Codex review. Fork PRs fail the review gate without exposing the API key; a maintainer must bring an approved change onto a repository branch. Draft PRs wait until ready. The Codex action also checks the triggering user's repository write access.
+Automatic GitHub review is included with supported ChatGPT subscriptions, including Plus, subject to review usage limits. It is separate from API-key billing. The previous API-based action failed because no API credits were available; its jobs, credential references, and custom publisher have been removed. Existing secrets are not changed or consumed. See [official pricing](https://learn.chatgpt.com/docs/pricing).
 
-Review execution has a read-only GitHub token. Only the separate publisher receives `pull-requests: write`; it receives the review result, not the OpenAI key. Checkouts do not persist credentials. Workflow actions and the Codex CLI version are pinned. The optional repository variable `CODEX_REVIEW_MODEL` selects a model; otherwise the Codex CLI default applies.
+## Review guidance and limits
 
-The [marketplace bot originally considered](https://github.com/marketplace/actions/codex-pr-review-bot) only posts a Markdown comment and offers neither a custom prompt nor a machine-readable verdict. The official action supports the repository's review prompt and output schema, allowing inline threads and a real failing check.
+The root `AGENTS.md` contains **Code Review Rules** prioritizing human readability, extensibility, security, performance, and correctness. It points reviewers to `docs/srs-core-requirements.md`, a versioned snapshot of the authoritative Drive SRS. Refresh that snapshot when the SRS changes; ticket checklists cannot override the SRS.
+
+The native integration posts review feedback directly on GitHub. OpenAI documents it as focusing on P0/P1 issues; custom guidance does not guarantee that lower-priority readability findings will be reported. A review is evidence of a high-priority review pass, not exhaustive proof of correctness. The separate Security Review product is not required for this setup.
+
+## Tests and merge gate
+
+The **Maven verification** Actions job runs the full reactor's `mvn verify` on Java 17 for opened, reopened, updated, and ready PRs. Draft PRs wait until ready. Its token has only `contents: read`, checkouts do not persist credentials, and actions are pinned to commits. It does not post reviews, call OpenAI, apply fixes, or merge.
+
+A green Maven check is not a review verdict. The implementation agent must check both test results and the native review for the current head before using the user's merge authorization. Do not treat an older review, a pending reaction, or a quota failure as approval. If the integration cannot produce a current review, keep the PR open and report the blocker. Existing branch protection is unchanged; no new required GitHub review check is claimed by this workflow.
 
 ## Fix and re-review cycle
 
-Implement and test locally through TDD, push through Git CLI, and wait for the current commit's review. If findings appear, reproduce them with failing tests, fix them, rerun verification, and push again. Every update triggers fresh automated analysis. Resolve threads once the fix is confirmed. Merge only after tests and **Codex review** pass for the current head, under the user's current merge authorization.
-
-The workflow reviews and reports; it does not apply fixes or merge PRs. During this session the implementation agent handles the TDD cycle and authorized merges, without posting a duplicate local agent review.
-
-`docs/srs-core-requirements.md` is a review snapshot of the authoritative Drive SRS. Update it when that SRS changes; ticket checklists cannot override the SRS.
+Keep one PR open at a time. Implement and test locally through TDD, commit and push through Git CLI, and wait for the current commit's native review. Reproduce actionable findings with a failing test, fix them, rerun verification, and push again. Request a fresh `@codex review` after fixes and confirm completion before resolving the findings and merging. Do not post a duplicate manual agent review in chat.
 
 ## Local validation
 
 ```bash
-node .github/scripts/publish-review.test.cjs
 actionlint .github/workflows/pr-review.yml
 mvn verify
 ```
+
+Account activation and a completed live review must be verified separately from these local checks.
