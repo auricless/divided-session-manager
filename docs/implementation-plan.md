@@ -108,3 +108,13 @@ The 112-test suite passes with 177/177 service lines covered (100%) and 137/138 
 A deliberately stricter 100% branch check exposed an initial package-filter mismatch. The rule now uses the Java package name, `org.c3cavite.core.service`. The 100% probe fails against the actual 99.28% coverage, while a full verify with the ticket thresholds passes. The remaining uncovered branch is a null-gender guard for a manually constructed separated group; the validated entry point never creates one. No production algorithm changes or runtime dependencies were needed.
 
 These local branches are implemented and verified, not merged or approved. PRs remain sequential, and the GitHub Action is the reviewer.
+
+## Phase 1B bootstrap: SM-20
+
+Acceptance criteria: a runnable Spring Boot service on port 8080, a Maven dependency on the standalone core, and no Spring dependencies in the core. Import Boot's BOM only in the service module to retain the repository's Maven parent. Boot 4.1.1 supports Java 17; its `spring-boot-starter-webmvc` replaces the older starter name in the ticket.
+
+TDD: the startup test first failed because no Spring Boot application configuration existed. Adding the application entry point and a core assignment-service bean makes the full reactor pass 113 tests and package an executable JAR. The test starts an actual HTTP server on a random port and calls the core through the wired bean. No assignment endpoint is included in this iteration.
+
+CLI smoke checks started both `mvn spring-boot:run` from the service module and the packaged JAR on port 8080, verified the expected HTTP 404 before endpoints exist, and stopped both processes. The core dependency tree contains only test-scoped JUnit dependencies and no Spring dependencies.
+
+This branch still requires automated PR review; the API quota blocker remains independent of local test success.

@@ -9,7 +9,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | Area | State |
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Automated review and merge gates remain before Phase 1A is complete. |
-| `session-manager-service` | Placeholder Maven module only. No Spring Boot application or REST endpoint yet. |
+| `session-manager-service` | Runnable Spring Boot wrapper with a startup test. No assignment endpoint yet; automated review is pending. |
 | Docker and Compose | Not implemented. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
 
@@ -85,7 +85,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 
 ## Development
 
-This is a Java 17 multi-module Maven project. Maven 3.6+ is required.
+This is a Java 17 multi-module Maven project. Maven 3.6.3+ is required.
 
 ```bash
 mvn test
@@ -93,6 +93,18 @@ mvn package
 mvn verify
 ```
 
-Run these commands from the repository root. They currently build and test the core plus the placeholder service module. The core entry point is `org.c3cavite.core.service.GroupAssignmentService`; there is no application command or HTTP endpoint yet.
+Run these commands from the repository root. They build and test the standalone core and the Spring Boot wrapper. The core entry point is `org.c3cavite.core.service.GroupAssignmentService`.
+
+To start the wrapper on port 8080, first install the reactor artifacts, then run from the service module:
+
+```bash
+mvn install
+cd session-manager-service
+mvn spring-boot:run
+```
+
+Alternatively, after packaging, run `java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar` from the repository root. No REST endpoint is implemented yet, so a request to `/` returns 404. Stop the process with Ctrl+C.
+
+Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 
 `mvn verify` generates `session-manager-core/target/site/jacoco/index.html` and `jacoco.xml`. The report includes domain classes, while coverage requirements apply only to `org.c3cavite.core.service`. A deliberately stricter 100% branch probe was verified to fail, confirming that the package filter enforces the rule. The one uncovered branch is the null-gender guard for a manually constructed group in SEPARATED mode; the validated assignment entry point does not create that combination.
