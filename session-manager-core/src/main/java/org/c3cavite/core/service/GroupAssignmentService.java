@@ -80,6 +80,6 @@ public class GroupAssignmentService {
         // 4. Assign Facilitators
         warnings.addAll(facilitatorAssigner.assign(allGroups, facilitators, config));
 
-        return new AssignmentResult(allGroups, unassigned, warnings);
+        return new AssignmentResult(allGroups, unassigned, warnings, config.getCapSize());
     }
 }

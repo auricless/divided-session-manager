@@ -38,7 +38,20 @@ but returned participant records exposed cached default tiers. Three failing reg
 confirmed assigned and unassigned output mismatches and reuse across sessions. The fix returns
 immutable session-specific participant copies. Full Maven verification then passed all 66 tests.
 
-Iteration 1 is implemented and verified; user review is pending. No coverage claim is made yet.
+Iteration 1 passed agent review and was merged in PR #3. The user authorized merging after agent review for this session. No coverage claim is made yet.
+
+## Iteration 2: explicit assignment result states (SM-12)
+
+Acceptance criteria:
+
+- Return FINAL only when every formed group has a LEADER; empty input is an empty final result.
+- Return NON_FINAL_PROPOSAL with actionable, numbered group blockers for missing leaders, invalid leader roles, or a violated supplied cap.
+- Preserve groups, counts, warnings, and unassigned attendees with reasons.
+- Capture immutable result snapshots, including group contents and facilitator qualifications.
+- Retain the existing constructor and JavaBean getters; actual JSON serialization remains Phase 1B as stated in SM-12.
+
+TDD: the four initial immutability regression tests fail in the 70-test suite. State/blocker and service tests were added before their APIs.
+After implementation, all 77 tests and full Maven verification pass. The result copies group contents, protects mutation methods, and defensively copies facilitator qualification lists. No dependencies were added.
 
 ## Next iterations
 

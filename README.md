@@ -15,7 +15,9 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 ## What the core accepts and returns
 
-`GroupAssignmentService.assign(config, participants, facilitators)` accepts a `SessionConfig`, attendees, and facilitators. It returns an `AssignmentResult` with groups, unassigned attendees with reasons, and warnings. Facilitators do not count toward participant group size.
+`GroupAssignmentService.assign(config, participants, facilitators)` accepts a `SessionConfig`, attendees, and facilitators. It returns an `AssignmentResult` with groups, an explicit state, actionable blockers, unassigned attendees with reasons, and warnings. Facilitators do not count toward participant group size.
+
+Results are immutable snapshots, including their groups and facilitator qualifications. `getState()` returns `FINAL` when every formed group has a LEADER and respects the supplied event cap; otherwise it returns `NON_FINAL_PROPOSAL`. An empty assignment is final. `getBlockers()` identifies affected groups by their one-based position in `getGroups()`, with a code and an action for the organizer. Excluded attendees remain in the unassigned list and do not block a staffed assignment. Mutable `Group` objects can still be used during assignment construction; mutation methods on groups returned in a result throw `UnsupportedOperationException`.
 
 Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. There is no stored event, registration process, or user interface.
 
@@ -44,9 +46,9 @@ SessionConfig custom = SessionConfig.builder()
 2. Each segment starts with `ceil(attendee count / target size)` groups. Attendees are distributed evenly within that segment.
 3. When that count exceeds the number of available leaders qualified for the segment's tier, the engine may reduce the group count toward the configured cap. This calculation does not reserve leaders across segments.
 4. Leaders and then optional assistants are assigned from the supplied lists. Qualification by age tier is required. In separated mode, a matching facilitator gender is preferred, but a different gender is currently accepted.
-5. A group without a qualified available leader remains in the result with a `null` leader and a warning. This is current behavior. The intended behavior is to return a **non-final proposal** showing the shortage so an admin can resolve it. An admin may explicitly assign a facilitator despite the normal age-tier qualification or gender preference. A leaderless group must never be finalized, and the engine must not automatically relax a demographic boundary. An explicit override flag is enough for the first release; a reason is not required.
+5. A group without a leader remains in a **non-final proposal**, with a warning and an actionable blocker. Explicit facilitator exceptions are the next iteration; a leaderless group cannot be finalized.
 
-The code processes Youth segments first. The current result has no explicit draft/final state or override workflow. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
+The code processes Youth segments first. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
 
 ## Gaps against the first-release requirements
 
@@ -66,7 +68,7 @@ The code processes Youth segments first. The current result has no explicit draf
 ## Decisions to resolve
 
 - Which other overrides can an admin make, such as moving one attendee or merging groups? The configured cap remains hard for a run; an organizer may change the event cap and rerun. Override inputs need an explicit flag, but no reason in the first release.
-- How should the engine represent a non-final proposal, its blockers, and the explicit facilitator exception in its result and inputs?
+- How should the explicit facilitator exception be represented in assignment inputs?
 - What are the permitted limits on participant-level overrides?
 - What should happen when age, gender, or Young Adult life stage is missing, and how are walk-ins or edits handled after groups are formed?
 - Which later platform features are essential for the first real event, and what attendee data must be retained?
