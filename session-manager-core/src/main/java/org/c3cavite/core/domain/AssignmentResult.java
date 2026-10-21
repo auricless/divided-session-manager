@@ -2,6 +2,8 @@ package org.c3cavite.core.domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Immutable snapshot of an assignment and the actions needed before it is final. */
 public class AssignmentResult {
@@ -28,6 +30,10 @@ public class AssignmentResult {
 
     private List<AssignmentBlocker> findBlockers(int capSize) {
         List<AssignmentBlocker> found = new ArrayList<>();
+        Map<DemographicSegment, Integer> segmentCounts = new HashMap<>();
+        for (Group group : groups) {
+            segmentCounts.merge(new DemographicSegment(group.getAgeTierTarget(), group.getGenderTarget()), 1, Integer::sum);
+        }
         for (int i = 0; i < groups.size(); i++) {
             Group group = groups.get(i);
             int number = i + 1;
@@ -47,9 +53,17 @@ public class AssignmentResult {
                         "Redistribute group " + number + " within the configured cap of " + capSize
                                 + ", or change the event cap and rerun."));
             }
+            if (group.getParticipants().size() < 2
+                    && segmentCounts.get(new DemographicSegment(group.getAgeTierTarget(), group.getGenderTarget())) > 1) {
+                found.add(new AssignmentBlocker(AssignmentBlocker.Code.MINIMUM_GROUP_SIZE, number,
+                        "Group " + number + " needs at least 2 participants because its tier/gender segment has multiple groups. "
+                                + "Adjust attendee distribution or event configuration and rerun; keep the hard cap and demographic rules."));
+            }
         }
         return List.copyOf(found);
     }
+
+    private record DemographicSegment(AgeTier tier, Gender gender) { }
 
     public AssignmentState getState() { return state; }
     public boolean isFinal() { return state == AssignmentState.FINAL; }

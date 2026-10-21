@@ -3,9 +3,8 @@ package org.c3cavite.core.service;
 import org.c3cavite.core.domain.*;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public class FacilitatorAssigner {
 
@@ -28,13 +27,11 @@ public class FacilitatorAssigner {
 
     private void assignRole(List<Group> groups, List<Facilitator> available, FacilitatorEligibility eligibility,
                             Role role, List<String> warnings) {
+        Map<Group, Facilitator> assignments = new FacilitatorMatcher().match(groups, available, eligibility, role);
         for (int i = 0; i < groups.size(); i++) {
             Group group = groups.get(i);
-            Optional<Facilitator> selected = available.stream()
-                    .filter(f -> eligibility.permits(f, role, group.getAgeTierTarget(), group.getGenderTarget()))
-                    .min(Comparator.comparingInt(f -> eligibility.exceptionCount(f,
-                            group.getAgeTierTarget(), group.getGenderTarget())));
-            if (selected.isEmpty()) {
+            Facilitator facilitator = assignments.get(group);
+            if (facilitator == null) {
                 if (role == Role.LEADER) {
                     group.assignLeader(null);
                     warnings.add("Group " + (i + 1) + " for " + group.getAgeTierTarget() + " is leaderless.");
@@ -43,7 +40,6 @@ public class FacilitatorAssigner {
                 }
                 continue;
             }
-            Facilitator facilitator = selected.get();
             if (role == Role.LEADER) group.assignLeader(facilitator);
             else group.assignAssistant(facilitator);
             available.remove(facilitator);
