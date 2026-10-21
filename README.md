@@ -85,7 +85,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 
 ## Development
 
-PRs use [automated Codex review](docs/automated-pr-review.md) through GitHub Actions. Local work follows TDD; fixes are pushed for a fresh automated review. The SRS remains the ultimate design authority, with a [versioned requirements snapshot](docs/srs-core-requirements.md) available to the reviewer.
+PRs use [subscription-backed Codex review](docs/automated-pr-review.md) alongside Maven verification in GitHub Actions. Enable the repository connection and automatic review in Codex account settings. Local work follows TDD; fixes are pushed for a fresh native review. The SRS remains the ultimate design authority, with a [versioned requirements snapshot](docs/srs-core-requirements.md) available to the reviewer.
 
 This is a Java 17 multi-module Maven project. Maven 3.6+ is required.
 

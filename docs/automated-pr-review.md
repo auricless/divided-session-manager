@@ -18,11 +18,11 @@ Automatic GitHub review is included with supported ChatGPT subscriptions, includ
 
 The root `AGENTS.md` contains **Code Review Rules** prioritizing human readability, extensibility, security, performance, and correctness. It points reviewers to `docs/srs-core-requirements.md`, a versioned snapshot of the authoritative Drive SRS. Refresh that snapshot when the SRS changes; ticket checklists cannot override the SRS.
 
-The native integration posts review feedback directly on GitHub. OpenAI documents it as focusing on P0/P1 issues; custom guidance does not guarantee that lower-priority readability findings will be reported. A review is evidence of a high-priority review pass, not exhaustive proof of correctness. The separate Security Review product is not required for this setup.
+The native integration posts prioritized review feedback directly on GitHub. Repository rules set the review priorities; they do not guarantee exhaustive coverage. Our live setup review produced P2/P3 findings as well. The separate Security Review product is not required for this setup.
 
 ## Tests and merge gate
 
-The **Maven verification** Actions job runs the full reactor's `mvn verify` on Java 17 for opened, reopened, updated, and ready PRs. Draft PRs wait until ready. Its token has only `contents: read`, checkouts do not persist credentials, and actions are pinned to commits. It does not post reviews, call OpenAI, apply fixes, or merge.
+The **Maven verification** Actions job runs the full reactor's `mvn verify` on Java 17 for opened, reopened, updated, and ready PRs. It tests GitHub's proposed merge commit from the workflow event, so the build includes both the PR and base branch; a regression guard checks that checkout matches the event's merge SHA. Draft PRs wait until ready. Its token has only `contents: read`, checkouts do not persist credentials, and actions are pinned to commits. It does not post reviews, call OpenAI, apply fixes, or merge.
 
 A green Maven check is not a review verdict. The implementation agent must check both test results and the native review for the current head before using the user's merge authorization. Do not treat an older review, a pending reaction, or a quota failure as approval. If the integration cannot produce a current review, keep the PR open and report the blocker. Existing branch protection is unchanged; no new required GitHub review check is claimed by this workflow.
 
