@@ -51,4 +51,105 @@ class FacilitatorAssignerTest {
 
         assertEquals(maleLeader, group.getLeader());
     }
+
+    @Test
+    void separatedModeRejectsGenderMismatchForLeadersAndAssistants() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        List<Facilitator> roster = List.of(
+                new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS)),
+                new Facilitator("Assistant", Role.ASSISTANT, Gender.FEMALE, List.of(AgeTier.TEENS)));
+
+        assigner.assign(List.of(group), roster, SessionConfig.builder().capSize(6).build());
+
+        assertNull(group.getLeader());
+        assertNull(group.getAssistant());
+    }
+
+    @Test
+    void duplicateRosterEntryCannotStaffTwoGroups() {
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.MALE, List.of(AgeTier.TEENS));
+        List<Group> groups = List.of(new Group(Gender.MALE, AgeTier.TEENS, null),
+                new Group(Gender.MALE, AgeTier.TEENS, null));
+
+        assertThrows(IllegalArgumentException.class, () -> assigner.assign(groups, List.of(leader, leader),
+                SessionConfig.builder().capSize(6).build()));
+    }
+
+    @Test
+    void explicitGenderExceptionOnlyWaivesGender() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS));
+
+        List<String> warnings = assigner.assign(List.of(group), List.of(leader),
+                SessionConfig.builder().capSize(6).build(), List.of(new FacilitatorException(leader, false, true)));
+
+        assertEquals(leader, group.getLeader());
+        assertTrue(warnings.stream().anyMatch(w -> w.contains("exception") && w.contains("gender")));
+    }
+
+    @Test
+    void qualificationAndGenderExceptionsAreIndependent() {
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.YOUTH));
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+        for (FacilitatorException exception : List.of(new FacilitatorException(leader, true, false),
+                new FacilitatorException(leader, false, true))) {
+            Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+            assigner.assign(List.of(group), List.of(leader), config, List.of(exception));
+            assertNull(group.getLeader());
+        }
+        Group allowed = new Group(Gender.MALE, AgeTier.TEENS, null);
+        assigner.assign(List.of(allowed), List.of(leader), config,
+                List.of(new FacilitatorException(leader, true, true)));
+        assertEquals(leader, allowed.getLeader());
+    }
+
+    @Test
+    void exceptionDoesNotPromoteAssistantToLeader() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator assistant = new Facilitator("Assistant", Role.ASSISTANT, Gender.FEMALE, List.of());
+
+        assigner.assign(List.of(group), List.of(assistant), SessionConfig.builder().capSize(6).build(),
+                List.of(new FacilitatorException(assistant, true, true)));
+
+        assertNull(group.getLeader());
+        assertEquals(assistant, group.getAssistant());
+    }
+
+    @Test
+    void normalEligibleStaffTakePriorityOverAnException() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator exceptionLeader = new Facilitator("Exception", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS));
+        Facilitator eligible = new Facilitator("Eligible", Role.LEADER, Gender.MALE, List.of(AgeTier.TEENS));
+
+        List<String> warnings = assigner.assign(List.of(group), List.of(exceptionLeader, eligible),
+                SessionConfig.builder().capSize(6).build(),
+                List.of(new FacilitatorException(exceptionLeader, false, true)));
+
+        assertEquals(eligible, group.getLeader());
+        assertTrue(warnings.isEmpty());
+    }
+
+    @Test
+    void mixedModeAllowsEitherGenderWithoutAnException() {
+        Group group = new Group(null, AgeTier.TEENS, null);
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.FEMALE, List.of(AgeTier.TEENS));
+
+        assigner.assign(List.of(group), List.of(leader),
+                SessionConfig.builder().capSize(6).genderMode(GenderMode.MIXED).build());
+
+        assertEquals(leader, group.getLeader());
+    }
+
+    @Test
+    void exceptionsMustReferToUniqueRosterInstances() {
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.MALE, List.of(AgeTier.TEENS));
+        Facilitator other = new Facilitator("Leader", Role.LEADER, Gender.MALE, List.of(AgeTier.TEENS));
+        FacilitatorException exception = new FacilitatorException(leader, true, false);
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+
+        assertThrows(IllegalArgumentException.class, () -> assigner.assign(List.of(), List.of(other), config,
+                List.of(exception)));
+        assertThrows(IllegalArgumentException.class, () -> assigner.assign(List.of(), List.of(leader), config,
+                List.of(exception, exception)));
+    }
 }
