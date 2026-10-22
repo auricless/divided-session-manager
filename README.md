@@ -13,7 +13,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
 | PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
 | Participant registration API and stored assignment | Delivered in PR #16 after PostgreSQL CI, concurrency/restart acceptance and native review. |
-| Registration UI, live display and print/CSV | Implemented and browser-verified; current frontend PR CI and native review remain required before delivery. |
+| Registration UI, live display and print/CSV | Thymeleaf registration, two-second live display and safe print/CSV views are implemented and browser-verified; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records CI and review status. |
 
 ## What the core accepts and returns
 

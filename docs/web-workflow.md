@@ -18,4 +18,4 @@ Browser code uses safe DOM text rendering and external modules. Templates escape
 - Full PostgreSQL `-Pquality clean verify` passes 183 tests. Browser module syntax and actionlint also pass.
 - Actual browser acceptance created a named event, registered Alex, received a leaderless proposal, added qualified Sam and obtained FINAL, then applied visible exceptions and verified they were withdrawn on the next run.
 - The dedicated live page observed a registration from another HTTP client without reloading: it cleared the result and disabled print/export, then refreshed to FINAL with two attendees after recomputation. The browser downloaded CSV; Python's CSV reader verified all rows have 12 columns and the two participant records match the displayed assignment.
-- Paper printing and public deployment were not performed. Current-head CI, dependency-risk readback and native review remain delivery gates.
+- Paper printing and public deployment were not performed. Current-head CI, dependency-risk readback and native review are enforced before merging; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records their delivery status.
