@@ -31,15 +31,6 @@
                 <version>0.8.15</version>
                 <executions>
                     <execution>
-                        <id>prepare-coverage</id>
-                        <goals><goal>prepare-agent</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>coverage-report</id>
-                        <phase>verify</phase>
-                        <goals><goal>report</goal></goals>
-                    </execution>
-                    <execution>
                         <id>check-service-coverage</id>
                         <phase>verify</phase>
                         <goals><goal>check</goal></goals>

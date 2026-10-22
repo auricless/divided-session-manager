@@ -1,0 +1,67 @@
+name: SonarQube Cloud
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: SonarQube quality gate
+    # Configure both repository variables to activate the integration.
+    # Fork and Dependabot PRs cannot receive the analysis credential.
+    if: >-
+      vars.SONAR_ORGANIZATION != '' && vars.SONAR_PROJECT_KEY != '' &&
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       (!github.event.pull_request.draft &&
+        github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+      SONAR_ACCOUNT_REGION: ${{ vars.SONAR_REGION }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Verify and analyze with JaCoCo coverage
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo '::error::Set the repository Actions secret SONAR_TOKEN before activating SonarQube Cloud.'
+            exit 1
+          fi
+          region_args=()
+          case "$SONAR_ACCOUNT_REGION" in
+            ''|eu) ;;
+            us) region_args+=(-Dsonar.region=us) ;;
+            *) echo '::error::SONAR_REGION must be eu or us.'; exit 1 ;;
+          esac
+          mvn --batch-mode --no-transfer-progress verify \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+            "-Dsonar.organization=$SONAR_ORGANIZATION" \
+            "-Dsonar.projectKey=$SONAR_PROJECT_KEY" \
+            "-Dsonar.java.jdkHome=$JAVA_HOME" \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300 \
+            "${region_args[@]}"
