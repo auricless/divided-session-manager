@@ -8,12 +8,12 @@ Set a local database password, then start the complete stack:
 
 ```bash
 export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
-docker compose up --build
+docker compose up --build --detach --wait
 ```
 
-The service is at localhost:8080 and PostgreSQL at localhost:5432. The `postgres-data` volume survives container recreation. `docker compose down` retains it; `docker compose down --volumes` deletes it. Retain the password when reusing the existing volume; changing an environment variable does not change an initialized PostgreSQL account's password.
+The UI and API proxy are at localhost:8080. The API and PostgreSQL ports are private by default. The `postgres-data` volume survives container recreation. `docker compose down` retains it; `docker compose down --volumes` deletes it. Retain the password when reusing the existing volume; changing an environment variable does not change an initialized PostgreSQL account's password.
 
-For a host JVM, start only `docker compose up -d db`, then export `DATABASE_PASSWORD="$POSTGRES_PASSWORD"` and run the documented Maven/JAR command. Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. Do not put credentials in source files.
+For a host JVM, opt into the loopback database port with `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db`, then export `DATABASE_PASSWORD="$POSTGRES_PASSWORD"` and run the documented Maven/JAR command. Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. Do not put credentials in source files.
 
 ## Event contract
 
@@ -45,7 +45,7 @@ TEST_DATABASE_PASSWORD="$POSTGRES_PASSWORD" \
 mvn --batch-mode --no-transfer-progress -Pquality clean verify
 ```
 
-PR verification and Sonar workflows run tests against PostgreSQL 17.11 service containers. The core's own dependency tree remains free of persistence/framework dependencies. Container CI separately starts the Compose database/app and checks the actual image and HTTP endpoint.
+PR verification and Sonar workflows run tests against PostgreSQL 17.11 service containers. The core's own dependency tree remains free of persistence/framework dependencies. Container CI separately builds/starts the UI/API/database stack and checks its images, browser workflow, private networking, persistence and recovery.
 
 ## Event participants and latest assignment
 

@@ -100,3 +100,11 @@ Local Docker daemon access is unavailable, so no local image build or three-
 container runtime pass is claimed. The earlier PR #13 CI evidence applies only
 to the previous API/database topology. This deployment requires its own passing
 current-head CI and native review before it is considered delivered.
+
+
+The first full-stack preflight [CI run 39817001524](https://github.com/auricless/divided-session-manager/actions/runs/39817001524)
+passed on the temporary `chore/container-acceptance` branch (f220251): both images,
+Chromium's complete workflow and the HTTP/isolation/image/persistence/database
+recovery checks succeeded. This is CI evidence, not a local Docker run. The
+sequential deployment PR must repeat the checks on its own proposed merge and
+pass native review before delivery.
