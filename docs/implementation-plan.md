@@ -86,9 +86,9 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 
 ## Remaining review and implementation gates
 
-- SM-31 / PR #7: live automated review is blocked on OpenAI API quota. The Codex subscription reset did not resolve the separate API quota failure. Do not merge without the automated verdict.
-- SM-8 / SM-9 / SM-11: model validation changes are saved on `fix/domain-validation`, pending their own automated-review PR.
-- SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are saved on `test/core-coverage`, pending automated review after the model change.
+- SM-31 / PR #7: subscription-backed native review and API-free Java 17 Maven CI passed review and merged. Automatic review on PR open is verified; do not post a duplicate manual review request for the same head.
+- SM-8 / SM-9 / SM-11: model validation and SRS-compliant empty-qualification exceptions passed review and merged in PR #8.
+- SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, awaiting their sequential native review.
 - SM-20–23: complete the later Spring Boot wrapper, assignment endpoint, Dockerfile, and local Compose setup as a separate milestone after the core implementation.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
@@ -97,14 +97,16 @@ Keep each iteration reviewable in a PR. Tickets move to In Review after verifica
 
 TDD found four model validation/equality failures in 103 tests. New size/setter and session-aware participant validation tests preceded their APIs. The model update validates facilitator fields and qualifications, implements value equality, guards group roles and null attendees, exposes size/setter aliases, requires participant gender, and validates Young Adult life stage against the event tier. All 106 tests and full Maven verification pass. Existing Role enum naming is retained for compatibility.
 
-Work is saved on fix/domain-validation. Per the user's updated review workflow, subsequent PR reviews will be performed by GitHub Actions instead of local agent review. Automated-review setup is the next priority.
+Native review found that rejecting empty facilitator qualification lists contradicted SRS FAC-05: an organizer must be able to grant an explicit qualification exception even when the facilitator has no qualified tier. Two regressions failed before relaxing that constructor restriction. Null lists and null entries remain invalid; empty lists remain strictly ineligible without the run-scoped exception. All 108 tests and Maven verify pass after the fix.
+
+PR #8 passed Java 17 CI and fresh native review with no findings and merged as cb17fb6. PR #7 established subscription-backed GitHub review and API-free Maven verification in Actions. Subsequent changes use that native review and TDD fix cycle rather than duplicate local review.
 
 ## Coverage and segmentation verification: SM-13 / SM-27 / SM-18
 
 JaCoCo 0.8.15 generates HTML/XML reports during Maven verify. Its package rule checks 80% line coverage and 70% branch coverage for the algorithm service package; domain classes appear in the report but are outside those thresholds.
 
-The 112-test suite passes with 177/177 service lines covered (100%) and 137/138 branches covered (99.28%). Added acceptance cases exercise empty/single/all-tier segmentation, unknown/inactive tier exclusion, qualification-only exceptions, null roster/exception entries, and refusal to consolidate a staffed segment when doing so cannot help another tier.
+The 114-test suite passes with 177/177 service lines covered (100%) and 137/138 branches covered (99.28%). Added acceptance cases exercise empty/single/all-tier segmentation, unknown/inactive tier exclusion, qualification-only exceptions, null roster/exception entries, and refusal to consolidate a staffed segment when doing so cannot help another tier.
 
 A deliberately stricter 100% branch check exposed an initial package-filter mismatch. The rule now uses the Java package name, `org.c3cavite.core.service`. The 100% probe fails against the actual 99.28% coverage, while a full verify with the ticket thresholds passes. The remaining uncovered branch is a null-gender guard for a manually constructed separated group; the validated entry point never creates one. No production algorithm changes or runtime dependencies were needed.
 
-These local branches are implemented and verified, not merged or approved. PRs remain sequential, and the GitHub Action is the reviewer.
+The coverage iteration is implemented and verified locally, pending native review. PRs remain sequential. PR opening triggers review automatically; request another review only if an updated head has no automatic review queued or completed.

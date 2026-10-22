@@ -15,6 +15,26 @@ class GroupAssignmentServiceTest {
     private final GroupAssignmentService service = new GroupAssignmentService();
 
     @Test
+    void emptyQualificationsRequireAnExplicitExceptionForThatRun() {
+        Facilitator leader = new Facilitator("Unqualified leader", Role.LEADER, Gender.MALE, List.of());
+        SessionConfig config = SessionConfig.builder().capSize(6).build();
+        List<Participant> participants = attendees(2, 17, null);
+
+        AssignmentResult strict = service.assign(config, participants, List.of(leader));
+        AssignmentResult allowed = service.assign(config, participants, List.of(leader),
+                List.of(new FacilitatorException(leader, true, false)));
+        AssignmentResult withdrawn = service.assign(config, participants, List.of(leader));
+
+        assertFalse(strict.isFinal());
+        assertNull(strict.getGroups().get(0).getLeader());
+        assertTrue(allowed.isFinal());
+        assertEquals(leader, allowed.getGroups().get(0).getLeader());
+        assertTrue(allowed.getWarnings().stream().anyMatch(warning -> warning.contains("exception")));
+        assertFalse(withdrawn.isFinal());
+        assertTrue(leader.getQualifiedTiers().isEmpty());
+    }
+
+    @Test
     void filtersAndAssignsUsingTheCurrentSessionsAgeBoundaries() {
         SessionConfig config = SessionConfig.builder().capSize(6).activeTiers(List.of(AgeTier.TEENS))
                 .ageTierBoundaries(Map.of(AgeTier.TEENS, new AgeRange(13, 17),

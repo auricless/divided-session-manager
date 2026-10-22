@@ -11,8 +11,8 @@ public class Facilitator {
 
     public Facilitator(String name, Role role, Gender gender, List<AgeTier> qualifiedTiers) {
         if (name == null || name.isBlank() || role == null || gender == null
-                || qualifiedTiers == null || qualifiedTiers.isEmpty() || qualifiedTiers.stream().anyMatch(tier -> tier == null)) {
-            throw new IllegalArgumentException("Facilitator name, role, gender, and non-empty valid qualifications are required");
+                || qualifiedTiers == null || qualifiedTiers.stream().anyMatch(tier -> tier == null)) {
+            throw new IllegalArgumentException("Facilitator name, role, gender, and a valid qualification list are required");
         }
         this.name = name;
         this.role = role;
