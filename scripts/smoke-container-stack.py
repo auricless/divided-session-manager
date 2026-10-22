@@ -10,6 +10,17 @@ import urllib.error
 import urllib.request
 
 
+# Shared by actual container checks and the executable policy regression.
+RUNTIME_TOOL_CHECK = '\n'.join([
+    'for program do',
+    '  if command -v "$program" >/dev/null 2>&1; then',
+    '    echo "Unexpected runtime tool: $program" >&2',
+    '    exit 1',
+    '  fi',
+    'done',
+])
+
+
 def request(base, path, method='GET', body=None, expected=200):
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(base + path, data=data, method=method,
@@ -89,9 +100,10 @@ def main():
     for name in ['ui', 'session-manager-service']:
         uid = compose('exec', '-T', name, 'id', '-u')
         assert uid != '0', (name, uid)
-    compose('exec', '-T', 'ui', 'sh', '-c', 'set -e; ! command -v node; ! command -v npm')
-    compose('exec', '-T', 'session-manager-service', 'sh', '-c',
-            'set -e; java -version; ! command -v javac; ! command -v mvn; ! command -v node')
+    compose('exec', '-T', 'ui', 'sh', '-c', RUNTIME_TOOL_CHECK, 'runtime-policy', 'node', 'npm')
+    compose('exec', '-T', 'session-manager-service', 'java', '-version')
+    compose('exec', '-T', 'session-manager-service', 'sh', '-c', RUNTIME_TOOL_CHECK,
+            'runtime-policy', 'javac', 'mvn', 'node')
     image = json.loads(subprocess.check_output(['docker', 'image', 'inspect',
                        services['session-manager-service']['image']], text=True))[0]
     assert image['Size'] < 300_000_000, image['Size']
