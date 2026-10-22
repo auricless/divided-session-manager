@@ -113,6 +113,7 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
   const path = pathFor(eventId);
   const assignment = useAssignment(eventId);
   const [participants, setParticipants] = useState([]);
+  const [rosterError, setRosterError] = useState(null);
   const [editor, setEditor] = useState({ version: 0, person: null });
   const [staff, setStaff] = useState([]);
   const staffId = useRef(0);
@@ -144,10 +145,23 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
     if (eventRevision === undefined) return;
     const requests = rosterRequests.current;
     requests.active = true;
-    refreshParticipants().catch((error) => {
-      if (requests.active) setFeedback({ message: error.message, error: true });
-    });
+    let disposed = false;
+    let retry;
+    async function loadParticipants() {
+      try {
+        await refreshParticipants();
+        if (!disposed) setRosterError(null);
+      } catch (error) {
+        if (!disposed) {
+          setRosterError(error.message);
+          retry = window.setTimeout(loadParticipants, 2000);
+        }
+      }
+    }
+    loadParticipants();
     return () => {
+      disposed = true;
+      window.clearTimeout(retry);
       requests.active = false;
       ++requests.sequence;
     };
@@ -225,6 +239,11 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
         <h1>{event.name}</h1>
       </header>
       <Feedback feedback={feedback} />
+      {rosterError && (
+        <p className="warning" role="alert">
+          {rosterError} Retrying participant list…
+        </p>
+      )}
       <div className="columns">
         <section className="card">
           <h2>Register participant</h2>

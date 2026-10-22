@@ -469,3 +469,30 @@ it('reloads the event list after cached restoration and ignores a late pre-navig
   window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
   expect(pending).toHaveLength(2);
 });
+
+it('retries a failed participant read without requiring another event mutation', async () => {
+  vi.useFakeTimers();
+  const original = api.getMockImplementation();
+  let attempts = 0;
+  participants = [
+    { id: 'retry', name: 'Recovered attendee', age: 18, gender: 'MALE', ageTier: 'YOUTH' },
+  ];
+  api.mockImplementation(async (path, ...args) => {
+    if (path === `${eventPath}/participants` && ++attempts === 1)
+      throw new Error('Roster temporarily offline');
+    return original(path, ...args);
+  });
+  try {
+    render(<RegistrationPage eventId={event.id} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText(/Roster temporarily offline/)).toBeVisible();
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(screen.getByText('Recovered attendee')).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Registered attendees/ })).toHaveTextContent('(1)');
+  } finally {
+    vi.useRealTimers();
+  }
+});
