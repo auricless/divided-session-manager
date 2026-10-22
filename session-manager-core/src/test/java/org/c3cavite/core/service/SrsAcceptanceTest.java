@@ -10,7 +10,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 import org.c3cavite.core.domain.AgeTier;
+import org.c3cavite.core.domain.AssignmentBlocker;
 import org.c3cavite.core.domain.AssignmentResult;
+import org.c3cavite.core.domain.AssignmentState;
 import org.c3cavite.core.domain.Facilitator;
 import org.c3cavite.core.domain.Gender;
 import org.c3cavite.core.domain.GenderMode;
@@ -61,11 +63,15 @@ class SrsAcceptanceTest {
 
   @Test
   void sharedServiceAndInputsAreIndependentAcrossConcurrentInvocations() throws Exception {
-    List<Participant> roster = participants(200);
-    List<Facilitator> staff = facilitators(200);
+    List<Participant> roster = new ArrayList<>(participants(200));
+    roster.add(new Participant("Underage attendee", 12, Gender.MALE, null));
+    List<Facilitator> staff = new ArrayList<>(facilitators(20));
+    staff.add(new Facilitator("Assistant", Role.ASSISTANT, Gender.MALE, List.of(AgeTier.values())));
     SessionConfig separated = config(6, GenderMode.SEPARATED);
     SessionConfig mixed = config(4, GenderMode.MIXED);
-    List<String> original = signature(service.assign(separated, roster, staff));
+    AssignmentResult originalResult = service.assign(separated, roster, staff);
+    ResultSnapshot original = signature(originalResult);
+    ResultSnapshot mixedExpected = signature(service.assign(mixed, roster, staff));
     var executor = Executors.newFixedThreadPool(4);
     try {
       List<Callable<AssignmentResult>> runs = new ArrayList<>();
@@ -78,12 +84,26 @@ class SrsAcceptanceTest {
         SessionConfig config = i % 2 == 0 ? separated : mixed;
         AssignmentResult result = results.get(i).get();
         verify(config, roster, result);
-        assertEquals(signature(service.assign(config, roster, staff)), signature(result));
+        assertEquals(i % 2 == 0 ? original : mixedExpected, signature(result));
       }
     } finally {
       executor.shutdownNow();
     }
+    assertEquals(original, signature(originalResult));
     assertEquals(original, signature(service.assign(separated, roster, staff)));
+  }
+
+  @Test
+  void snapshotDetectsWarningChangesEvenWhenMembershipIsUnchanged() {
+    AssignmentResult original =
+        service.assign(config(6, GenderMode.SEPARATED), participants(2), facilitators(4));
+    AssignmentResult changed =
+        new AssignmentResult(
+            original.getGroups(),
+            original.getUnassignedParticipants(),
+            List.of("A different run leaked this warning"),
+            6);
+    assertNotEquals(signature(original), signature(changed));
   }
 
   private SessionConfig config(int cap, GenderMode mode) {
@@ -119,8 +139,9 @@ class SrsAcceptanceTest {
   }
 
   private void verify(SessionConfig config, List<Participant> roster, AssignmentResult result) {
-    assertEquals(roster.size(), result.getTotalAssignedParticipants());
-    assertTrue(result.getUnassignedParticipants().isEmpty());
+    assertEquals(
+        roster.size(),
+        result.getTotalAssignedParticipants() + result.getUnassignedParticipants().size());
     var assigned = new HashSet<Participant>();
     var leaders = new HashSet<String>();
     for (var group : result.getGroups()) {
@@ -146,13 +167,70 @@ class SrsAcceptanceTest {
         assertFalse(result.getBlockers().isEmpty());
       }
     }
+    result
+        .getUnassignedParticipants()
+        .forEach(unassigned -> assertTrue(assigned.add(unassigned.participant())));
     assertEquals(new HashSet<>(roster), assigned);
     assertEquals(result.getBlockers().isEmpty(), result.isFinal());
   }
 
-  private List<String> signature(AssignmentResult result) {
-    return result.getGroups().stream()
-        .map(g -> g.getParticipants().toString() + ":" + g.getLeader())
-        .toList();
+  private ResultSnapshot signature(AssignmentResult result) {
+    return new ResultSnapshot(
+        result.getState(),
+        result.getTotalGroups(),
+        result.getTotalAssignedParticipants(),
+        result.getGroups().stream()
+            .map(
+                g ->
+                    new GroupSnapshot(
+                        g.getGenderTarget(),
+                        g.getAgeTierTarget(),
+                        g.getLifeStageTarget(),
+                        g.getSize(),
+                        g.getParticipants().stream().map(this::participantSnapshot).toList(),
+                        g.getLeader(),
+                        g.getAssistant()))
+            .toList(),
+        result.getBlockers().stream()
+            .map(b -> new BlockerSnapshot(b.getCode(), b.getGroupNumber(), b.getMessage()))
+            .toList(),
+        result.getUnassignedParticipants().stream()
+            .map(u -> new UnassignedSnapshot(participantSnapshot(u.participant()), u.reason()))
+            .toList(),
+        List.copyOf(result.getWarnings()));
   }
+
+  private ParticipantSnapshot participantSnapshot(Participant participant) {
+    return new ParticipantSnapshot(
+        participant.getName(),
+        participant.getAge(),
+        participant.getGender(),
+        participant.getLifeStage(),
+        participant.getAgeTier());
+  }
+
+  private record ResultSnapshot(
+      AssignmentState state,
+      int totalGroups,
+      int totalAssigned,
+      List<GroupSnapshot> groups,
+      List<BlockerSnapshot> blockers,
+      List<UnassignedSnapshot> unassigned,
+      List<String> warnings) {}
+
+  private record GroupSnapshot(
+      Gender gender,
+      AgeTier tier,
+      LifeStage lifeStage,
+      int size,
+      List<ParticipantSnapshot> participants,
+      Facilitator leader,
+      Facilitator assistant) {}
+
+  private record ParticipantSnapshot(
+      String name, int age, Gender gender, LifeStage lifeStage, AgeTier tier) {}
+
+  private record BlockerSnapshot(AssignmentBlocker.Code code, int number, String message) {}
+
+  private record UnassignedSnapshot(ParticipantSnapshot participant, String reason) {}
 }
