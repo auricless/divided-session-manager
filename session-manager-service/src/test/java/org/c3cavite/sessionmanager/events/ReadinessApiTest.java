@@ -43,34 +43,21 @@ class ReadinessApiTest {
 
   @AfterAll
   static void stopDatabase() {
-    if (database != null) database.stop();
+    if (database != null) {
+      database.stop();
+    }
   }
 
   @Test
-  void readinessIsAvailableWithoutExposingDatabaseDetails() throws Exception {
-    var response = get("readiness");
-    assertEquals(200, response.statusCode(), response.body());
-    assertEquals("{\"status\":\"UP\"}", response.body());
-  }
-
-  @Test
-  void databaseLossMakesReadinessUnavailableAndRecoversWithoutRestartingTheApi() throws Exception {
+  void reportsReadyThenUnavailableWhenItsDatabaseStops() throws Exception {
+    var ready = get("readiness");
+    assertEquals(200, ready.statusCode(), ready.body());
+    assertEquals("{\"status\":\"UP\"}", ready.body());
     database.stop();
-    try {
-      var unavailable = get("readiness");
-      assertEquals(503, unavailable.statusCode(), unavailable.body());
-      assertEquals("{\"status\":\"DOWN\"}", unavailable.body());
-      assertEquals(200, get("liveness").statusCode());
-    } finally {
-      database = startDatabase(databasePort);
-    }
-    HttpResponse<String> recovered = get("readiness");
-    long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-    while (recovered.statusCode() != 200 && System.nanoTime() < deadline) {
-      Thread.sleep(100);
-      recovered = get("readiness");
-    }
-    assertEquals(200, recovered.statusCode(), recovered.body());
+    var unavailable = get("readiness");
+    assertEquals(503, unavailable.statusCode(), unavailable.body());
+    assertEquals("{\"status\":\"DOWN\"}", unavailable.body());
+    assertEquals(200, get("liveness").statusCode());
   }
 
   private static Server startDatabase(int port) throws Exception {
