@@ -394,3 +394,30 @@ it('refreshes remotely changed settings while preserving drafts across roster-on
     vi.useRealTimers();
   }
 });
+
+it('refreshes participant counts and rows after remote edits, deletions and cache restoration', async () => {
+  vi.useFakeTimers();
+  participants = [{ id: 'remote', name: 'Before edit', age: 18, gender: 'MALE', ageTier: 'YOUTH' }];
+  try {
+    render(<RegistrationPage eventId={event.id} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Before edit')).toBeVisible();
+    participants = [{ ...participants[0], name: 'After remote edit' }];
+    currentEvent = { ...currentEvent, revision: 2 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(screen.getByText('After remote edit')).toBeVisible();
+    expect(screen.queryByText('Before edit')).not.toBeInTheDocument();
+    act(() => window.dispatchEvent(new Event('pagehide')));
+    participants = [];
+    currentEvent = { ...currentEvent, revision: 3 };
+    await act(async () =>
+      window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true })),
+    );
+    expect(screen.queryByText('After remote edit')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Registered attendees/ })).toHaveTextContent('(0)');
+  } finally {
+    vi.useRealTimers();
+  }
+});

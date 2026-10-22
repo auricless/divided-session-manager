@@ -76,3 +76,17 @@ it('a superseded failed request cannot clear a newer assignment', async () => {
   expect(snapshots.at(-1).revision).toBe(2);
   expect(errors.at(-1)).toBeNull();
 });
+
+it('does not let a scheduled background poll cancel an action refresh', async () => {
+  feed.start();
+  answer(0, 1);
+  await flush();
+  const action = feed.refresh();
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(requests[2].signal.aborted).toBe(false);
+  expect(requests).toHaveLength(4);
+  answer(2, 2);
+  expect((await action).revision).toBe(2);
+  await flush();
+  expect(vi.getTimerCount()).toBe(1);
+});

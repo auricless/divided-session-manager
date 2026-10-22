@@ -127,7 +127,9 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
     const roster = await api(`${path}/participants`);
     if (requests.active && current === requests.sequence) setParticipants(roster);
   }, [path]);
+  const eventRevision = assignment.event?.revision;
   useEffect(() => {
+    if (eventRevision === undefined) return;
     const requests = rosterRequests.current;
     requests.active = true;
     refreshParticipants().catch((error) => {
@@ -137,7 +139,7 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
       requests.active = false;
       ++requests.sequence;
     };
-  }, [refreshParticipants]);
+  }, [refreshParticipants, eventRevision]);
   const edit = (person) => setEditor((previous) => ({ version: previous.version + 1, person }));
   async function saveParticipant(form) {
     const fields = new FormData(form);

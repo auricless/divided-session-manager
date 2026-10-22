@@ -8,8 +8,9 @@ export function createAssignmentFeed(eventPath, options) {
   let pollCycle = 0;
   let timer;
   let request;
+  let actionInFlight;
   const draw = (snapshot) => options.onSnapshot(snapshot);
-  async function refresh() {
+  async function read() {
     if (stopped) return null;
     const current = ++sequence;
     request?.abort();
@@ -35,9 +36,19 @@ export function createAssignmentFeed(eventPath, options) {
       throw error;
     }
   }
+  async function refresh() {
+    const pending = read();
+    actionInFlight = pending;
+    try {
+      return await pending;
+    } finally {
+      if (actionInFlight === pending) actionInFlight = null;
+    }
+  }
   async function poll(cycle) {
     try {
-      await refresh();
+      // A user refresh takes priority; background work shares its result.
+      await (actionInFlight || read());
     } catch {
       /* refresh already clears unverified results; retry on the next poll. */
     } finally {
