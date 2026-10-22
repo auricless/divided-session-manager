@@ -1,0 +1,348 @@
+SOFTWARE REQUIREMENTS SPECIFICATION
+Small Group / Divided Session Manager
+Core Library and Web Application
+Version
+1.1.0 — Draft
+Date
+October 2026
+Author
+Personal Portfolio Project
+Status
+In Review
+Table of Contents
+1. Introduction
+   1.1 Purpose
+   1.2 Scope
+   1.3 Definitions and Glossary
+   1.4 Document Overview
+2. Overall Description
+   2.1 Product Perspective
+   2.2 User Classes and Characteristics
+   2.3 Assumptions and Dependencies
+3. System Features & Functional Requirements
+   3.1 Event & Session Configuration
+   3.2 Participant Management
+   3.3 Facilitator Management
+   3.4 Group Assignment Algorithm
+   3.5 Output & Results
+4. Algorithm Design
+   4.1 Grouping Constraints
+   4.2 Assignment Logic
+   4.3 Edge Cases
+5. Non-Functional Requirements
+6. Technical Architecture
+7. Project Phases & Roadmap
+8. Out of Scope
+9. React Web Application and Container Deployment
+1. Introduction
+1.1 Purpose
+This document is the Software Requirements Specification (SRS) for the Small Group / Divided Session Manager. It defines the standalone Java assignment library and the web roadmap: Spring Boot API, PostgreSQL persistence and a React UI. Revision 1.1 adds independently containerized UI/API/database deployment through Docker Compose; the core grouping rules remain unchanged.
+1.2 Scope
+The first release remains a reusable Java assignment library. The current full-project scope also includes the Phase 1B/2A/2B web roadmap and the React/container requirements in section 9. The core engine is responsible for:
+Accepting participants, facilitators, event configuration, and explicit organizer overrides as input
+Applying configurable grouping rules (gender separation, age tier, group size)
+Assigning facilitators (Leader + optional Assistant) to each group
+Returning a structured final assignment or a non-final proposal with actionable blockers
+The Spring Boot API, event/participant persistence, React registration/live/print/export UI and three-container local deployment are required web-roadmap deliverables. User authentication and other unspecified future product features remain outside this revision. First-release exclusions in section 8 apply to the standalone core milestone, not to the explicitly included web roadmap.
+1.3 Definitions and Glossary
+Term
+Definition
+Event
+A church gathering that includes a Divided Session segment.
+Divided Session
+The portion of an event where attendees break into small groups for discussion.
+Participant
+An attendee registered for the event. Counted toward group size.
+Facilitator
+A trained volunteer assigned to lead a group. NOT counted toward group size.
+Leader
+The primary facilitator for a group. One per group; required.
+Assistant
+A secondary facilitator for a group. Optional; one per group.
+Group
+A set of participants plus their assigned facilitator(s).
+Age Tier
+A categorization of participants with configurable per-event boundaries; defaults are Teens (13–15), Youth (16–22), Young Adult (23+).
+Life Stage
+A sub-category within Young Adults: Student or Working Professional.
+Gender Mode
+A per-event flag: SEPARATED (default) or MIXED.
+Target Size
+The ideal number of participants per group (default: 4).
+Cap Size
+The maximum allowed participants per group, as configured by the event organizer. There is no system-enforced upper bound — the organizer is responsible for setting an appropriate value per event.
+Assignment Result
+The structured output: groups, a final or non-final proposal state, unassigned participants, and actionable blockers.
+1.4 Document Overview
+Section 2 describes the product context. Section 3 defines functional requirements. Section 4 details the algorithm design. Section 5 covers non-functional requirements. Sections 6–8 address architecture, phasing, and first-release scope boundaries. Section 9 specifies the required React UI, container deployment and web acceptance criteria.
+2. Overall Description
+2.1 Product Perspective
+The system originates from a real operational pain point observed in church event management. During events, a registration committee is responsible for manually registering walk-in participants and assigning them to small discussion groups in real time. As participant count grows, this becomes error-prone, inconsistent, and stressful for volunteers.
+Problem Statement
+It is challenging for the registration committee to manually identify and assign participants efficiently and effectively when the process is manual — especially as the number of participants increases. Grouping criteria including gender, age tier, life stage, group size, and facilitator availability must all be balanced simultaneously.
+This system applies grouping rules to participant and facilitator data to produce a final assignment when all required conditions are met, or a non-final proposal that identifies required organizer intervention.
+2.2 User Classes and Characteristics
+User Class
+Description
+Interaction
+Registration Committee
+Volunteers managing the event-day registration desk.
+Provides participant & facilitator data; receives group assignments.
+Event Organizer
+Plans the event; configures session rules and supplies explicit overrides when needed.
+Sets event-level configuration and reviews or overrides proposed assignments.
+Downstream Web App (Phase 2)
+The web layer that wraps this engine.
+Consumes the library/microservice API.
+2.3 Assumptions and Dependencies
+Participant data (name, age, gender, life stage) is provided at assignment time; the first-release library requires no registration database.
+Facilitator availability is confirmed before the session begins.
+A shortage of qualified Leaders produces a non-final proposal; no leaderless group may be finalized.
+Typical event size is under 30 participants, though the algorithm should not be hard-coded to this limit.
+Gender mode defaults to SEPARATED but is overridable per event.
+The first-release library returns in-memory Java objects; persistence and the HTTP/JSON wrapper are later work.
+3. System Features & Functional Requirements
+Requirements are tagged with a unique ID and a priority level: HIGH (must have), MEDIUM (should have), LOW (nice to have).
+3.1 Event & Session Configuration
+The system shall accept an event configuration object that governs how grouping rules are applied for that session.
+ID
+Requirement Description
+Priority
+CFG-01
+The system shall use SEPARATED gender mode by default unless the event organizer selects MIXED for the event.
+HIGH
+CFG-02
+The system shall use a default target group size of 4 participants unless the event organizer supplies another positive target size.
+HIGH
+CFG-03
+The system shall require a maximum group cap parameter to be explicitly set by the event organizer. There is no system default — the organizer must provide this value for every event to encourage deliberate group size planning.
+HIGH
+CFG-04
+The system shall accept active age tiers and configurable per-event age boundaries, using 13–15, 16–22, and 23+ as defaults.
+HIGH
+CFG-05
+The system shall split Young Adults by STUDENT and WORKING_PROFESSIONAL life stage by default and allow the organizer to turn that split off per event.
+MEDIUM
+CFG-06
+Configuration validation shall reject a missing cap, a target size of zero or less, a target larger than the cap, and invalid age boundaries such as gaps or overlaps. The cap remains hard for a run; an organizer may change the event cap and rerun.
+HIGH
+3.2 Participant Management
+A Participant is an event attendee to be assigned to a group. Each participant carries the attributes the algorithm needs.
+ID
+Requirement Description
+Priority
+PRT-01
+Each participant record shall contain: name, age (integer), and gender (MALE / FEMALE) for the first release.
+HIGH
+PRT-02
+The system shall derive age tier from the participant's age using the event's configured boundaries, defaulting to Teens (13–15), Youth (16–22), and Young Adult (23+).
+HIGH
+PRT-03
+Participants in the Young Adult tier shall carry a life stage attribute: STUDENT or WORKING_PROFESSIONAL.
+MEDIUM
+PRT-04
+The system shall accept a list of zero or more participants as input. An empty list shall return an empty assignment result.
+HIGH
+PRT-05
+Participants below age 13 shall be flagged with a warning and excluded from automated assignment (handled separately).
+MEDIUM
+3.3 Facilitator Management
+Facilitators are volunteers assigned to lead groups. They are not counted in participant group size.
+ID
+Requirement Description
+Priority
+FAC-01
+Each facilitator record shall contain: name, role (LEADER or ASSISTANT), gender, and a list of age tiers they are qualified for.
+HIGH
+FAC-02
+Each final group shall have exactly one LEADER facilitator. A non-final proposal may show an unstaffed group as a blocker.
+HIGH
+FAC-03
+Each group may optionally be assigned one ASSISTANT facilitator if available.
+MEDIUM
+FAC-04
+In SEPARATED mode, the system shall use a facilitator of the group's gender by default. A different-gender assignment is allowed only through an explicit organizer exception.
+MEDIUM
+FAC-05
+If qualified facilitators cannot cover all groups, the system shall consolidate within the configured cap where possible and return a non-final proposal with actionable blockers. It shall not finalize a leaderless group or relax a demographic rule automatically. An organizer may explicitly override facilitator qualification or gender preference; no reason field is required in the first release.
+HIGH
+3.4 Group Assignment Algorithm
+This is the core feature of the system. The algorithm takes all inputs and produces an assignment.
+ID
+Requirement Description
+Priority
+ALG-01
+In SEPARATED gender mode, participants shall only be placed in groups with participants of the same gender.
+HIGH
+ALG-02
+Participants shall only be placed in groups with other participants of the same age tier.
+HIGH
+ALG-03
+Within the Young Adult tier, if life-stage sub-grouping is enabled, Students and Working Professionals shall be placed in separate groups.
+MEDIUM
+ALG-04
+The algorithm shall aim to produce groups at the target size before opening a new group.
+HIGH
+ALG-05
+No group shall exceed the maximum cap size as configured for the event. The algorithm shall treat the configured cap as a hard constraint that cannot be exceeded regardless of facilitator availability.
+HIGH
+ALG-06
+The algorithm shall distribute remaining participants as evenly as possible when a tier's count does not divide cleanly into the target size.
+HIGH
+ALG-07
+The Youth tier shall be given priority for sub-group splitting if participant count exceeds the cap in that tier.
+HIGH
+ALG-08
+The system shall not create a group with fewer than 2 participants unless it is the only group in its tier/gender segment.
+MEDIUM
+3.5 Output & Results
+ID
+Requirement Description
+Priority
+OUT-01
+The system shall return groups and an explicit final or non-final proposal state. A non-final proposal shall identify blockers that require organizer action.
+HIGH
+OUT-02
+The result shall include metadata: total groups formed, total participants assigned, any warnings.
+MEDIUM
+OUT-03
+The result shall be serializable to JSON for consumption by a downstream service.
+HIGH
+OUT-04
+If a participant cannot be placed in a valid group, the result shall list that participant as unassigned with a reason. A group lacking a Leader remains a non-final proposal with a blocker.
+HIGH
+4. Algorithm Design
+This section describes the intended logic and flow of the grouping algorithm. This is not pseudocode — it is a specification of behavior the implementation must satisfy.
+4.1 Grouping Constraints (Priority Order)
+The algorithm shall apply constraints in the following order of priority. Higher priority constraints are never violated by lower priority ones.
+#
+Constraint
+Rule
+1
+Hard Cap
+Groups must never exceed the configured cap size. This is a hard constraint. The organizer must set this value explicitly — there is no system default.
+2
+Gender Separation
+When mode=SEPARATED, male and female participants must be in separate groups.
+3
+Age Tier Separation
+Teens, Youth, and Young Adults must always be in separate groups.
+4
+Life Stage Separation
+When enabled, YA Students and Working Professionals must be in separate groups.
+5
+Target Size
+The algorithm aims for the configured target size (default 4). It deviates only when necessary to respect constraints 1–4.
+6
+Facilitator Coverage
+Every final group must have exactly one LEADER. A proposed group without one is flagged as a blocker and cannot be finalized.
+4.2 Assignment Logic (High-Level Flow)
+Validate event config, participant list, facilitator list, and explicit organizer overrides.
+Partition participants into segments: group by (gender if SEPARATED) × (age tier) × (life stage if enabled). Each unique combination is a segment.
+For each segment: calculate the number of groups needed. Groups = ceil(segment.size / targetSize). Ensure groups × cap >= segment.size.
+Distribute participants across groups in the segment as evenly as possible.
+Assign facilitators to each group: first assign one LEADER, then one ASSISTANT if available. In SEPARATED mode, use matching facilitator gender unless an explicit organizer exception permits a mismatch.
+Collect all groups into the result. Return a final assignment only when every group has a Leader; otherwise return a non-final proposal with actionable blockers and any unassigned participants.
+Return the AssignmentResult object.
+4.3 Edge Cases
+Fewer participants than target size → one group is created with all participants.
+More participants than qualified facilitators can cover → consolidate within the hard cap where possible, then return a non-final proposal if any group still lacks a Leader. An organizer may explicitly apply a facilitator exception and rerun.
+All participants are the same tier/gender → single segment, straightforward split.
+Zero participants in a tier → no groups created for that tier.
+Participant with age outside defined tiers → flagged as unassigned with reason UNKNOWN_TIER.
+5. Non-Functional Requirements
+5.1 Performance
+The algorithm shall produce a complete assignment for up to 200 participants in under 500ms on a standard developer machine.
+The core assignment engine shall be stateless — each invocation is independent. The web roadmap persists event, participant and current-assignment data in PostgreSQL.
+5.2 Reliability
+The system shall never throw an unhandled exception for any valid input combination.
+All edge cases shall be handled gracefully, returning a result with warnings rather than crashing.
+5.3 Maintainability
+Business rules (group size, age tier boundaries) shall be configurable — not hard-coded in the algorithm logic.
+Code shall follow clean code principles: single-responsibility methods, meaningful naming, no magic numbers.
+JUnit test coverage shall target ≥ 80% of the core algorithm package.
+5.4 Portability
+The first release shall be a standalone Java library (JAR) via Maven. The runnable microservice and Docker image are planned outside that release.
+The later service wrapper shall expose a REST API for integration with a web application.
+6. Technical Architecture
+Technology Stack
+Java 17+ | Maven | JUnit 5 | Spring Boot REST/JSON API | PostgreSQL and Flyway | React with npm build/tests | UI static server/reverse proxy | Docker and Docker Compose
+6.1 First Release — Core Library
+The core engine will be a plain Java module with no web framework dependency. It exposes a single entry-point service class:
+Component
+Responsibility
+SessionConfig
+Value object holding event-level configuration, including default gender mode and target size, required hard cap, active tiers, and configurable age boundaries.
+Participant
+Value object. Holds name, age, gender. Age tier derived automatically.
+Facilitator
+Value object. Holds name, role (LEADER/ASSISTANT), gender, qualified tiers.
+Group
+Holds a list of Participants + assigned Facilitators.
+AssignmentResult
+Wraps groups, final/proposal state, actionable blockers, warnings, and the unassigned list.
+GroupAssignmentService
+Primary entry point. Accepts config, participants, facilitators, and explicit overrides; recomputes or validates and returns AssignmentResult.
+SegmentationStrategy
+Partitions participants into segments by gender/tier/life stage.
+FacilitatorAssigner
+Assigns Leader + Assistant to each group using available facilitators.
+6.2 Maven Project Structure
+The Maven modules provide the core and API. A separate frontend project owns React source, npm lockfile, tests, production build and UI-server Dockerfile (section 9):
+session-manager-core  — Pure Java algorithm library (no framework)
+src/main/java/...  — Domain model + algorithm
+src/test/java/...  — JUnit 5 tests
+session-manager-service  — Spring Boot wrapper exposing REST API
+Depends on session-manager-core as a Maven dependency
+Dockerfile for containerization
+7. Project Phases & Roadmap
+Phase
+Focus
+Key Deliverables
+Phase 1A(Core Library)
+Domain model + algorithm
+Participant, Facilitator, Group, and SessionConfig models; GroupAssignmentService with configurable defaults and explicit overrides; final/proposal result; JUnit 5 tests.
+Phase 1B(Microservice)
+REST wrapper + Docker, outside first release
+Spring Boot app wrapping the core; POST /api/v1/sessions/assign endpoint; Dockerfile; docker-compose.yml for local dev.
+Phase 2A(Web — Backend)
+Persistence + API layer
+PostgreSQL schema; event & participant CRUD endpoints; Spring Data JPA.
+Phase 2B(Web — Frontend)
+UI layer
+React registration UI; real-time group display; print/export view; independent UI-server image and Docker Compose orchestration with API and PostgreSQL (section 9).
+Learning Value by Phase
+Phase 1A → Java OOP, clean code, unit testing (JUnit 5), Maven project structure.Phase 1B → Spring Boot, REST API design, Docker, microservice patterns.Phase 2A → SQL schema design, Spring Data JPA, database migrations (Flyway/Liquibase).Phase 2B → Frontend integration, UI/UX for non-technical users.
+8. Out of Scope (First Release)
+The following items are outside the first-release core library and are deferred to later milestones:
+User authentication and role-based access control
+Persistent storage of participants, events, or assignment history
+Web-based user interface
+Email or push notifications to participants or facilitators
+Web-based editing or re-assigning groups after initial assignment; the core library accepts explicit organizer overrides and recomputes or validates results
+Multi-event or recurring event scheduling
+Analytics or reporting dashboards
+Mobile application
+These exclusions keep the first release focused and testable as a standalone Java library. The service wrapper and web workflow remain later milestones.
+9. React Web Application and Container Deployment
+9.1 Revision scope
+Revision 1.1.0, 22 October 2026: React is the required Phase 2B UI. The web application shall run as three separately built containers: UI server, Spring Boot API and PostgreSQL, orchestrated with Docker Compose. This section adds requirements for the web roadmap; CFG, PRT, FAC, ALG and OUT rules and the standalone first-release core remain unchanged. Earlier React-or-Thymeleaf wording is superseded by this revision.
+9.2 Web application requirements
+WEB-01 (HIGH): The registration and group-display UI shall use React, built as an independent frontend project with a committed dependency lockfile. The API shall not render Thymeleaf pages or bundle the UI runtime. The core remains a Java library used by the API, not a separate network service.
+WEB-02 (HIGH): The React UI shall support event creation/selection/configuration, participant creation/edit/removal, facilitator entry and separate explicit qualification/gender exceptions per computation. Invalid input shall retain entered values and show an actionable message. Successful computation shall clear exception permissions for the next run. The API remains authoritative for validation and assignment rules.
+WEB-03 (HIGH): Registration and dedicated group-display views shall show FINAL versus NON_FINAL_PROPOSAL, groups, counts, facilitators, blockers, warnings and unassigned reasons. Cross-client changes shall be reflected on the next two-second poll plus response time. Mismatched event/assignment revisions and connection failures shall clear unverified output and disable print/export. Back/forward restoration shall immediately refresh and resume exactly one polling cycle; obsolete requests shall not overwrite newer results.
+WEB-04 (HIGH): Print and CSV controls shall refresh and verify the current assignment before use. The print layout shall hide controls and keep group cards together. CSV shall retain proposal state, blockers, warnings and unassigned reasons, escape quoted/newline content, guard spreadsheet formulas and return 409 when no current assignment exists. Untrusted text shall be rendered as text, not executable markup.
+9.3 Container and orchestration requirements
+DEP-01 (HIGH): UI and API shall have independent multi-stage Docker builds. The UI runtime shall serve the compiled React assets without a Node development server; the API runtime shall contain its executable JAR and a Java runtime, without Maven or a JDK. PostgreSQL shall use its own supported image. Build inputs and dependency versions shall be reproducible and documented.
+DEP-02 (HIGH): After required environment configuration, one documented Docker Compose command shall build/start all three services. Each service shall have its own container and lifecycle. No Kubernetes cluster, service-discovery server or additional business microservices are required by this revision.
+DEP-03 (HIGH): The UI server shall be the browser entry point and reverse-proxy /api/ requests to the API over the Compose network. Browser requests shall use relative paths and one origin. Direct navigation to valid React routes shall load the UI; missing API routes shall retain API error responses rather than returning the UI shell. No database connection or secret shall reach the browser bundle.
+DEP-04 (HIGH): The default stack shall publish only the UI on a configurable localhost port, default 8080. API and database ports shall remain private. Separate application/database networks shall prevent direct UI-to-database access. Optional host-development port bindings shall be explicit, loopback-only and documented.
+DEP-05 (HIGH): Database, API and UI services shall expose health checks. Compose shall wait for a healthy database before starting the API and a ready API before starting the UI. API readiness shall include database availability and report unavailable when the database cannot be reached. Health responses shall not disclose credentials or internal exception details.
+DEP-06 (HIGH): PostgreSQL event/participant/current-assignment data shall use a named volume and survive container recreation and normal stack shutdown. Flyway shall apply versioned schema migrations, while ORM schema validation shall reject incompatible state. Documentation shall distinguish retaining data from explicitly deleting the volume.
+DEP-07 (HIGH): Credentials and connection/port settings shall come from documented environment configuration. Missing required database credentials shall fail with a clear setup error; no usable shared password shall be committed. Example configuration shall contain placeholders only. Logs, frontend assets and Git history shall not gain credentials.
+DEP-08 (HIGH): UI and API runtime processes shall run as unprivileged users. Database execution shall follow the supported image's service-account model. The existing API image target of less than 300 MB remains in force; UI assets and build tools shall not be added to that API image. Browser security headers and safe text/CSV handling shall be retained at the UI/proxy boundary.
+DEP-09 (MEDIUM): The stack shall define restart behavior and graceful shutdown. Document start, health inspection, logs, rebuild, stop, recovery and data-removal commands. This is a local development deployment; public hosting, authentication, TLS termination, backups/restore policy, clustering and autoscaling require a separately agreed deployment specification.
+9.4 Verification and delivery
+VER-01 (HIGH): Changed behavior shall follow TDD: reproduce failures before implementation, then pass focused and full checks. React component/lifecycle tests shall cover registration, validation retention, exceptions, live invalidation, revision mismatch and navigation restoration. Existing Java API/core tests, JaCoCo algorithm coverage of at least 80%, Checkstyle, formatting and SpotBugs shall continue to pass.
+VER-02 (HIGH): CI shall build both application images and start the actual three-container stack. Acceptance shall verify health/startup order, UI direct routes and assets, same-origin API proxying, event/participant CRUD, assignment/proposal behavior, cross-client invalidation and print/CSV output. A container-recreation check shall prove persisted event/roster/current-assignment data survives. Unit mocks or Compose syntax checks alone shall not be reported as container runtime verification.
+VER-03 (HIGH): Java and frontend dependency risks shall be checked with supported tools, with actionable findings remediated before merge. Each sequential PR shall pass current-head CI and native Codex review with no unresolved actionable findings. A created task, an older review or an unrun acceptance check does not establish completion.

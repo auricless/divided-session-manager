@@ -1,23 +1,47 @@
-# Registration and group display
+# React registration and group display
 
-SRS section 7 Phase 2B uses Thymeleaf and the existing JSON APIs. Start the PostgreSQL/service stack as described in [event API setup](event-api.md), then open `/events` on localhost:8080.
+Authority: SRS v1.1 section 9. React lives in `frontend/` and uses the existing JSON APIs. The Java core and API retain their grouping/validation rules; the API no longer renders Thymeleaf or bundles UI assets. [Deployment requirements](web-deployment-requirements.md) track the separate UI image and three-container orchestration work.
 
-1. Create an event with an explicit maximum group cap. Target size, gender mode, active tiers, configurable contiguous boundaries and Young Adult life-stage splitting are available in the form. Leave the final upper age blank for an open-ended range.
-2. Register or edit participants in the event page. Life stage is required for session-derived Young Adults. Server validation preserves invalid form values so corrections do not require re-entry.
-3. Add available facilitators with roles, gender and qualified tiers. Explicit age-tier and gender exceptions are separate checkboxes for that run; they reset after successful computation and appear in result warnings. The facilitator form is intentionally not retained after leaving the page.
-4. Generate groups. A leaderless result stays a proposal with actionable blockers. Warnings and excluded/unassigned people remain visible. Config/roster edits invalidate the current assignment; a name-only edit preserves it.
-5. Open the event's live display at `/events/{id}/groups`. Both registration and display views poll every two seconds and discard superseded responses. A separate client's edits clear stale groups and disable print/export. Responses with different event/assignment revisions are unavailable until the next refresh. Returning through browser back/forward navigation immediately rechecks the assignment and resumes one polling loop. Connection failures clear unverified results while retrying.
-6. Print the displayed roster using the browser print dialog, or download CSV. Controls refresh current data before use. The print stylesheet hides controls and keeps group cards together. CSV includes state, summary, participants, leaders/assistants, blockers, warnings and unassigned reasons. Every cell is quoted/escaped, formula-leading user values are prefixed with an apostrophe, and an invalidated snapshot returns 409 instead of exporting stale data.
+## Local development
 
-Browser code uses safe DOM text rendering and external modules. Templates escape names, a content-security policy restricts scripts/styles to this origin, and event/attendee responses use no-store. Mutations use the validated JSON API; no cross-origin permissions are enabled. Authentication is not defined by the SRS roadmap and is not added; this is a local development workflow rather than a public deployment.
+Start PostgreSQL and the API as described in [event API setup](event-api.md). Use Node 24.21.0 (at least 24.15 on the 24.x line) for the frontend:
 
-## Evidence
+```bash
+npm ci --prefix frontend
+npm run dev --prefix frontend
+```
 
-- `RegistrationPageTest` first failed for absent pages, then found an enum-map template lookup bug; after the fix it verifies escaped event names, configuration/permission controls, security headers and assets.
-- `GroupDisplayExportTest` first failed for the absent view; it now exercises print/export controls, proposal/blocked state, CSV quoting/formula protection and 409 after invalidation.
-- Six Node regression tests first failed for stale revision rendering, stopped back/forward updates, duplicate polling and enabled controls after a direct refresh error. They now verify revision agreement, clearing unavailable results, resumed polling and ignoring pre-navigation responses. Run `node --test session-manager-service/src/test/js/*.test.mjs`; PR CI runs the same suite.
-- Full PostgreSQL `-Pquality clean verify` passes 183 Java tests. Browser module syntax and actionlint also pass.
-- Actual browser acceptance created a named event, registered Alex, received a leaderless proposal, added qualified Sam and obtained FINAL, then applied visible exceptions and verified they were withdrawn on the next run.
-- The dedicated live page observed a registration from another HTTP client without reloading: it cleared the result and disabled print/export, then refreshed to FINAL with two attendees after recomputation. The browser downloaded CSV; Python's CSV reader verified all rows have 12 columns and the two participant records match the displayed assignment.
-- Browser navigation regression acceptance: navigated away from the live view, registered a third attendee through another HTTP client, then returned with browser Back. The view showed no current assignment and disabled print/export; recomputing elsewhere was picked up automatically as FINAL with three attendees. The Node lifecycle tests explicitly exercise persisted `pageshow` and repeated cache restoration, independently of whether the browser chooses to cache a particular navigation.
-- Paper printing and public deployment were not performed. Current-head CI, dependency-risk readback and native review are enforced before merging; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records their delivery status.
+Open the URL printed by Vite, normally localhost:5173/events. The development server proxies relative `/api/` requests to localhost:8080. For another local API port, set `API_PROXY_TARGET` before starting Vite; it is a server-side development setting and is not bundled into the browser. `npm run build --prefix frontend` emits independent production assets in `frontend/dist`; it does not copy them into the API JAR. Vite's development/preview server is for local work; the production UI server belongs to SM-38.
+
+## Workflow
+
+1. Create an event with an explicit maximum cap. Target size, gender mode, active tiers, configurable contiguous age ranges and Young Adult life-stage splitting are available. A blank final upper age means open-ended.
+2. Register, edit or remove participants. Session-derived Young Adults require a life stage. Invalid values stay in the form for correction; names are rendered as React text.
+3. Enter available facilitators and qualifications. Separate exception checkboxes apply to that run only, reset after a successful computation, and appear in result warnings. The facilitator form is not retained after leaving the page.
+4. Generate groups. Leaderless results remain proposals with actions. Groups, counts, leaders/assistants, warnings and unassigned reasons remain visible. Roster/config edits invalidate the stored snapshot; name-only event edits preserve it.
+5. Open `/events/{id}/groups` for live display. Both screens poll every two seconds. Mismatched event/snapshot revisions, connection errors and obsolete requests cannot expose a verified roster. Back/forward restoration immediately refreshes and resumes one polling cycle; React unmount cancels work/listeners.
+6. Print or export CSV. Each action requires a current result from its own refresh; unavailable output disables both controls. The print stylesheet hides controls and keeps group cards together. The CSV API quotes/escapes cells, guards spreadsheet formulas, includes proposal/blocker/warning/unassigned details and rejects invalidated snapshots with 409.
+
+No database credentials enter React. The UI server/proxy must retain security headers and same-origin API routing in SM-38; API responses retain no-store and security headers now. Authentication/public deployment are not part of this local workflow.
+
+## Verification
+
+```bash
+npm run check --prefix frontend
+npm test --prefix frontend
+npm run build --prefix frontend
+npm audit --prefix frontend --audit-level=low
+mvn -Pquality verify
+```
+
+React component and feed tests cover event defaults/explicit cap, settings, participant edit/removal and validation retention, proposal/exception withdrawal, revision mismatch, failures/retry, repeated cache restoration and obsolete responses. The tests were introduced before the React entry point; API-only routing first failed with 200 where independent UI routes require backend 404. Full Java PostgreSQL verification continues to enforce core/API/security behavior and quality gates.
+
+Earlier Thymeleaf browser acceptance covered create/register, proposals/final, explicit exceptions, cross-client invalidation/recompute, participant edit/removal and parsed CSV download. That is historical evidence, not proof of the React migration. Current React browser and exact-head CI/native review evidence must be recorded in [PR #17](https://github.com/auricless/divided-session-manager/pull/17) before closing SM-36/37. Paper printing and public deployment have not been performed.
+
+## React migration acceptance (2026-10-22)
+
+- Clean npm install, ESLint/React-hooks/Prettier checks, 13 React/feed tests, production build and npm dependency audit pass; no reported dependency vulnerabilities. Full PostgreSQL Java quality verification passes all 183 tests.
+- Against a confirmed restarted API-only JAR (backend /events returns 404) and separate Vite server, actual browser acceptance created an event with an explicit cap, retained invalid Young Adult input, saved the corrected attendee, showed a leaderless proposal, reached FINAL with an eligible leader, displayed explicit exceptions/reset and returned to a proposal after withdrawal.
+- The React live view cleared an invalidated roster/disabled controls after a separate client registered, then automatically displayed a recomputed FINAL with two attendees. The participant edit was saved through React. CSV fetched through the same UI-origin API proxy parsed as four rows, twelve columns and two matching current attendees.
+- Browser automation timed out at participant-removal confirmation; that browser action is not claimed as passed. The React component test verifies confirm/cancel, owned DELETE and refreshed roster. Physical printing and a React-browser CSV download were not performed; component tests verify verification-before-print/export, and the HTTP CSV response is parsed independently.
+- Earlier browser Back checks reached an older running Thymeleaf process and are not evidence for the updated implementation. Persisted navigation, stale responses and single polling cycles are covered by the automated feed/React tests. Actual three-container acceptance remains SM-38–41.

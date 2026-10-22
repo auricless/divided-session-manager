@@ -1,6 +1,6 @@
 # SRS acceptance audit
 
-Authority: [Drive SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit), fetched 2026-10-22; last modified 2026-10-01T12:03:43.551Z. The [complete fetched text](srs-v1.0.txt) includes architecture, roadmap and first-release exclusions, beyond the [core requirements snapshot](srs-core-requirements.md).
+Authority: [Drive SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit), revised 2026-10-22. The [current full text](srs-v1.1.txt) includes section 9 React/container requirements; [v1.0](srs-v1.0.txt) is retained as history. The 28 core functional rules below are unchanged.
 
 The user's current scope includes the Phase 2A/2B roadmap. The document's first-release exclusions do not remove those explicitly named later deliverables. Authentication, notifications, scheduling, analytics and mobile remain unspecified future work; do not invent their acceptance criteria.
 
@@ -49,14 +49,18 @@ Core test classes below are in `session-manager-core/src/test/java/org/c3cavite/
 - NFR 5.4 / section 6.1: standalone Maven Java 17 core has only JUnit test dependencies; service concerns remain outside core. `mvn dependency:tree -pl session-manager-core` checks that boundary.
 - Section 6.2 / Phase 1B: service endpoint, executable JAR, Dockerfile and Compose are implemented. PR #13 passed actual image build/runtime/non-root/JRE/size/HTTP checks and exact-head native review before merge. See [container evidence](container-runtime.md).
 
-## Roadmap gaps and implementation order
+## Roadmap evidence and remaining work
 
 | SRS deliverable | Current evidence | Notion task |
 | --- | --- | --- |
 | Performance/reliability evidence and full traceability | Acceptance tests and this audit added; PR checks/review required | [Audit](https://app.notion.com/p/40161e61aca181b4aa8ff6ab5001c772) |
 | PostgreSQL schema, Spring Data JPA, event CRUD | Delivered in PR #15 after PostgreSQL CRUD/restart CI, native review and dependency remediation | [Persistence and events](https://app.notion.com/p/40161e61aca181ba8c4afb8636a15c26) |
 | Participant CRUD and event workflow integration | Delivered in PR #16 with 180 PostgreSQL tests and clean exact-head review; rename preservation regression included | [Participants and assignment](https://app.notion.com/p/40161e61aca181e88ec4e6098cd6ad5c) |
-| React or Thymeleaf registration UI | Implemented with Thymeleaf; page escaping/header tests and actual browser registration/assignment verified; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Registration UI](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) |
-| Real-time group display, print/export | Two-second shared live renderer, print view and safe CSV implemented. Actual browser verified cross-client invalidation/recompute and downloaded CSV; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Display and export](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) |
+| React registration UI | Migrating PR #17 to the now-required React UI; old Thymeleaf browser evidence is historical; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Registration UI](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) |
+| Real-time group display, print/export | CSV API retained; React live renderer/print controls preserve revision and navigation regression coverage; current React browser verification and review required; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Display and export](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) |
 
 Persistence must stay outside core, use real PostgreSQL verification and repeatable migrations, and retain the existing stateless assignment API. Store only the current event assignment needed for cross-client display; roster/config edits must invalidate it. This does not add unspecified assignment-history or scheduling features. UI and exports must preserve proposal states and explicit permissions and escape untrusted names.
+
+## Revision 1.1 deployment acceptance
+
+Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets](web-deployment-requirements.md) map these to SM-36–41. React migration, separate UI image/proxy, database-aware API readiness, private three-container Compose and actual-stack CI are not complete until their own current-head tests/review and runtime evidence pass. Do not infer v1.1 completion from the earlier two-container or Thymeleaf evidence.

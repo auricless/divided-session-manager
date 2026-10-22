@@ -22,18 +22,12 @@ class GroupDisplayExportTest {
   @Autowired private EventAssignmentService assignments;
 
   @Test
-  void rendersLiveAndPrintControlsAndExportsProposalsWithEscapedSpreadsheetCells()
-      throws Exception {
+  void exportsProposalsWithEscapedSpreadsheetCells() throws Exception {
     var event =
         events.create(
             new EventRequest(
                 "+Event", new AssignmentRequest.Config(6, null, null, null, null, null)));
     try {
-      var page = get("/events/" + event.id() + "/groups");
-      assertEquals(200, page.statusCode(), page.body());
-      assertTrue(page.body().contains("Print roster"));
-      assertTrue(page.body().contains("Export CSV"));
-      assertTrue(page.body().contains("group-display.js"));
       String export = "/api/v1/events/" + event.id() + "/assignment/export.csv";
       assertEquals(409, get(export).statusCode());
       participants.create(

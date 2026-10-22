@@ -51,14 +51,6 @@ jobs:
           TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/session_manager
           TEST_DATABASE_PASSWORD: ci-only-password
         run: mvn --batch-mode --no-transfer-progress verify
-      - name: Check browser JavaScript syntax
-        if: ${{ hashFiles('session-manager-service/src/main/resources/static/assets/*.js') != '' }}
-        run: |
-          for script in session-manager-service/src/main/resources/static/assets/*.js; do
-            node --input-type=module --check < "$script"
-          done
-      - name: Test browser assignment freshness and navigation lifecycle
-        run: node --test session-manager-service/src/test/js/*.test.mjs
       - name: Publish JaCoCo coverage report
         if: ${{ !cancelled() && (success() || hashFiles('**/target/site/jacoco/jacoco.xml') != '') }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -84,3 +76,26 @@ jobs:
           cache: maven
       - name: Check formatting, style, and bugs
         run: mvn --batch-mode --no-transfer-progress -Pquality -DskipTests -Djacoco.skip=true verify
+
+  frontend:
+    name: React verification
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --audit-level=low

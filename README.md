@@ -1,8 +1,8 @@
 # Divided Session Manager
 
-Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository contains its Java grouping engine and stateless assignment API. The service also provides event registration, live group display, and print/CSV roster views.
+Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository contains its Java grouping engine, Spring Boot event/assignment API and an independent React frontend. SRS v1.1 specifies separate UI/API/PostgreSQL containers.
 
-The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) is the ultimate source of truth for design; it takes precedence over conflicting ticket checklists. The first release is the core assignment library: it produces a final assignment when all required conditions are met and accepts explicit organizer overrides for recomputation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
+The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) is the ultimate source of truth for design; it takes precedence over conflicting ticket checklists. The first release is the core assignment library: it produces a final assignment when all required conditions are met and accepts explicit organizer overrides for recomputation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
 
 ## Current state
 
@@ -13,7 +13,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
 | PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
 | Participant registration API and stored assignment | Delivered in PR #16 after PostgreSQL CI, concurrency/restart acceptance and native review. |
-| Registration UI, live display and print/CSV | Thymeleaf registration, two-second live display and safe print/CSV views are implemented and browser-verified; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records CI and review status. |
+| Registration UI, live display and print/CSV | React registration, two-second live display and print/CSV integration are being migrated and verified in the independent frontend; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records CI and review status. |
 
 ## What the core accepts and returns
 
@@ -21,7 +21,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 Results are immutable snapshots, including their groups and facilitator qualifications. `getState()` returns `FINAL` when every formed group has a LEADER and respects the supplied event cap and minimum-size rule; otherwise it returns `NON_FINAL_PROPOSAL`. An empty assignment is final. `getBlockers()` identifies affected groups by their one-based position in `getGroups()`, with a code and an action for the organizer. Excluded attendees remain in the unassigned list and do not block a staffed assignment. Mutable `Group` objects can still be used during assignment construction; mutation methods on groups returned in a result throw `UnsupportedOperationException`.
 
-Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. The event API stores named configurations; participant registration and screens remain separate Phase 2 work.
+Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. The event API stores named configurations and participants; the React frontend uses the same API contracts.
 
 Default age tiers are Teens (13–15), Youth (16–22), and Young Adults (23+). Per-session inclusive ranges can override these boundaries. All three ranges must be present, ordered, and contiguous, with no overlaps. Ranges start at 13 or above; attendees outside the configured interval or in an inactive tier are returned as unassigned. For Young Adults, the life-stage values are `STUDENT` and `WORKING_PROFESSIONAL`.
 
@@ -125,6 +125,6 @@ Java style, formatting, bug checks, and SonarQube Cloud setup are documented in 
 
 The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.
 
-See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for requirement-to-test evidence and the remaining Phase 2 roadmap.
+See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for core/API evidence and the [React/container requirements](docs/web-deployment-requirements.md) for the remaining v1.1 deployment work.
 
-Open `/events` after starting the service for [registration, live display and roster export](docs/web-workflow.md).
+For [React registration, live display and roster export](docs/web-workflow.md), run the frontend separately during development. The backend no longer serves HTML routes. The three-container production-style local stack is tracked by SM-38–41.
