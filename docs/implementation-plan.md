@@ -116,3 +116,19 @@ The PR Maven workflow also publishes the JaCoCo HTML/XML directory as a commit-s
 ## Java quality workflow
 
 User-requested Checkstyle, Google Java Format, SpotBugs, and SonarQube Cloud integration are tracked in [the quality plan](java-quality.md). This is engineering tooling, without changes to SRS business behavior.
+
+## Phase 1B bootstrap: SM-20
+
+Acceptance criteria: a runnable Spring Boot service on port 8080, a Maven dependency on the standalone core, and no Spring dependencies in the core. Import Boot's BOM only in the service module to retain the repository's Maven parent. Boot 4.1.1 supports Java 17; its `spring-boot-starter-webmvc` replaces the older starter name in the ticket.
+
+TDD: the startup test first failed because no Spring Boot application configuration existed. Adding the application entry point and a core assignment-service bean makes the full reactor pass 113 tests and package an executable JAR. The test starts an actual HTTP server on a random port and calls the core through the wired bean. No assignment endpoint is included in this iteration.
+
+CLI smoke checks started both `mvn spring-boot:run` from the service module and the packaged JAR on port 8080, verified the expected HTTP 404 before endpoints exist, and stopped both processes. The core dependency tree contains only test-scoped JUnit dependencies and no Spring dependencies.
+
+This branch still requires Java 17 CI and current-head native Codex review before merge. API-key review has been removed in favor of the subscription integration.
+
+After integrating the reviewed 114-test core and Java quality configuration, the bootstrap reactor passes 115 tests plus formatting, style, SpotBugs, and core coverage. Shared JaCoCo preparation/reporting now runs for both modules; the service startup test calls the real main method and generates service XML for SonarQube. Algorithm coverage thresholds remain core-specific. CI publishes both module reports.
+
+Sonar reported dependency risks during bootstrap CI. A public OSV query matched ten advisories across Jackson Core/Databind 3.1.5 and Tomcat Embed Core 11.0.24. The service overrides those BOM versions with compatible Jackson 3.1.8 and Tomcat 11.0.27 patches; Jackson modules stay aligned through their BOM, and the three embedded Tomcat artifacts share one version. Dependency recheck, startup verification and fresh native review are required after this security fix.
+
+The remaining Sonar risk was identified as Logback CVE-2026-104721. Five security regression inputs failed before upgrading Logback Classic/Core to1.6.5 and aligning SLF4J to2.0.19; the full bootstrap quality build now passes122 tests. Official Sonar CLI1.10.0 is installed and authenticated through its OS keychain, and authenticated risk readback was verified. Current-head Java17 CI, Sonar risk clearance and native review remain merge gates.
