@@ -56,26 +56,54 @@ function renderAssignment(snapshot, view) {
 export function createAssignmentView(eventPath, target, options = {}) {
   let sequence = 0;
   let stopped = false;
+  let started = false;
+  let pollCycle = 0;
   let timer;
   function draw(snapshot) {
     renderAssignment(snapshot, target);
     options.onAvailable?.(snapshot);
   }
   async function refresh() {
+    if (stopped) return null;
     const current = ++sequence;
-    const [event, snapshot] = await Promise.all([api(eventPath), api(`${eventPath}/assignment`)]);
-    if (current !== sequence) return;
-    options.onEvent?.(event);
-    draw(snapshot);
+    try {
+      const [event, snapshot] = await Promise.all([api(eventPath), api(`${eventPath}/assignment`)]);
+      if (stopped || current !== sequence) return null;
+      options.onEvent?.(event);
+      // Concurrent GETs can straddle a roster/config change. Never expose that stale snapshot.
+      const verified = snapshot?.revision === event.revision ? snapshot : null;
+      draw(verified);
+      return verified;
+    } catch (error) {
+      if (!stopped && current === sequence) {
+        target.replaceChildren(element('p', `Cannot verify the current assignment: ${error.message} Retrying…`, 'warning'));
+        options.onAvailable?.(null);
+      }
+      throw error;
+    }
   }
-  async function poll() {
+  async function poll(cycle) {
     try { await refresh(); }
-    catch (error) {
-      ++sequence;
-      target.replaceChildren(element('p', `Cannot verify the current assignment: ${error.message} Retrying…`, 'warning'));
-      options.onAvailable?.(null);
-    } finally { if (!stopped) timer = window.setTimeout(poll, 2000); }
+    catch { /* refresh already clears unverified results; keep retrying this polling cycle. */ }
+    finally {
+      if (!stopped && cycle === pollCycle) timer = window.setTimeout(() => poll(cycle), 2000);
+    }
   }
-  window.addEventListener('pagehide', () => { stopped = true; window.clearTimeout(timer); }, {once:true});
-  return {refresh, show(snapshot) { ++sequence; draw(snapshot); }, start: poll};
+  function start() {
+    if (started && !stopped) return;
+    started = true;
+    stopped = false;
+    return poll(++pollCycle);
+  }
+  window.addEventListener('pagehide', () => {
+    stopped = true;
+    ++sequence;
+    ++pollCycle;
+    window.clearTimeout(timer);
+    draw(null);
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted && started && stopped) start();
+  });
+  return {refresh, show(snapshot) { if (!stopped) { ++sequence; draw(snapshot); } }, start};
 }

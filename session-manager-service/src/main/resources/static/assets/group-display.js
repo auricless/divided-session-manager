@@ -7,6 +7,12 @@ const view = createAssignmentView(path, document.querySelector('#assignment'), {
   onEvent(event) { document.querySelector('#event-heading').textContent = event.name; document.title = `${event.name} · Groups`; },
   onAvailable(snapshot) { print.disabled = !snapshot; csv.disabled = !snapshot; }
 });
-print.addEventListener('click', async () => { await view.refresh(); if (!print.disabled) window.print(); });
-csv.addEventListener('click', async () => { await view.refresh(); if (!csv.disabled) window.location.assign(`${path}/assignment/export.csv`); });
+print.addEventListener('click', async () => {
+  try { if (await view.refresh()) window.print(); }
+  catch { /* The shared view displays the verification error and disables controls. */ }
+});
+csv.addEventListener('click', async () => {
+  try { if (await view.refresh()) window.location.assign(`${path}/assignment/export.csv`); }
+  catch { /* The shared view displays the verification error and disables controls. */ }
+});
 view.start();
