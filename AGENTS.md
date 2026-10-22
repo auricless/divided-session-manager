@@ -30,6 +30,6 @@ Review the current PR diff and relevant surrounding code with a reviewer mindset
 
 ## Review and merge cycle
 
-Codex's subscription-backed GitHub integration performs PR review. GitHub Actions runs Maven verification without an OpenAI API key. If the reviewer finds an issue, reproduce it with a failing test, fix it, verify, push, and request a fresh `@codex review` for the current head. Keep PRs sequential. Merge only after current-head tests pass and current-head review is complete with no unresolved actionable findings; a green Maven check alone is insufficient. Follow the user's current merge authorization.
+Codex's subscription-backed GitHub integration performs PR review. GitHub Actions runs Maven verification without an OpenAI API key. If the reviewer finds an issue, reproduce it with a failing test, fix it, verify, and push. PR opening already triggers native review: do not post a duplicate request. For an updated head, inspect native activity first and request one fresh `@codex review` only when that head has no automatic review queued, running, or completed. Keep PRs sequential. Merge only after current-head tests pass and current-head review is complete with no unresolved actionable findings; a green Maven check alone is insufficient. Follow the user's current merge authorization.
 
 Native GitHub review has its own reporting thresholds and usage limits. These rules set review priorities; they do not guarantee exhaustive coverage or change the subscription's reporting limits. See [review setup and limitations](docs/automated-pr-review.md).
