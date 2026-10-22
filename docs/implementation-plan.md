@@ -128,3 +128,5 @@ CLI smoke checks started both `mvn spring-boot:run` from the service module and 
 This branch still requires Java 17 CI and current-head native Codex review before merge. API-key review has been removed in favor of the subscription integration.
 
 After integrating the reviewed 114-test core and Java quality configuration, the bootstrap reactor passes 115 tests plus formatting, style, SpotBugs, and core coverage. Shared JaCoCo preparation/reporting now runs for both modules; the service startup test calls the real main method and generates service XML for SonarQube. Algorithm coverage thresholds remain core-specific. CI publishes both module reports.
+
+Sonar reported dependency risks during bootstrap CI. A public OSV query matched ten advisories across Jackson Core/Databind 3.1.5 and Tomcat Embed Core 11.0.24. The service overrides those BOM versions with compatible Jackson 3.1.8 and Tomcat 11.0.27 patches; Jackson modules stay aligned through their BOM, and the three embedded Tomcat artifacts share one version. Dependency recheck, startup verification and fresh native review are required after this security fix.
