@@ -33,5 +33,10 @@
     "prettier": "3.9.10",
     "vite": "8.3.5",
     "vitest": "5.0.5"
+  },
+  "overrides": {
+    "ajv@6.15.0": {
+      "uri-js": "npm:fast-uri@4.2.3"
+    }
   }
 }

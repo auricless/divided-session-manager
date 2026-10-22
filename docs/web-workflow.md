@@ -53,3 +53,15 @@ Native review also reproduced a refresh-before-print race: the print callback st
 Remote settings synchronization first failed because the form retained an old event name/config after the poll returned updated settings. The settings form now remounts on stored name/config changes, preserving drafts across roster/assignment-only revision changes. The regression checks the displayed remote cap/target/gender/tier ranges and the subsequent PUT payload; invalid submissions with unchanged stored settings retain their inputs.
 
 Two further native findings were reproduced before fixing: remote roster changes left old participant rows/counts visible, and a scheduled poll aborted an in-flight print/export refresh. Roster reads now follow the polled event revision (including cache restoration), while background polls share a pending user refresh instead of canceling it. The regressions verify remote edit/deletion/count updates and a slow action surviving the two-second timer.
+
+### Linter URI dependency override
+
+ESLint currently uses Ajv 6, whose latest `uri-js` dependency (4.4.1) has no
+patched release for CVE-2026-93690, CVE-2026-93751 and CVE-2026-103387. The npm
+override is limited to Ajv 6.15.0 and substitutes the maintained `fast-uri` 4.2.3
+implementation under that dependency name. Ajv's required parse, serialize and
+resolve APIs remain covered by nested schema-reference validation and the full
+ESLint run. A separate process tests the Unicode line-separator input that hung
+the old parser, with a timeout protecting the test runner. This is a development
+tool dependency; no URI library is included in the browser bundle. Revisit the
+override when ESLint drops Ajv 6 or the upstream dependency is repaired.
