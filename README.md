@@ -11,8 +11,9 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
 | Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
-| PostgreSQL and event CRUD | Flyway/JPA event persistence and REST CRUD implemented; real database CI and native review are required before delivery. |
-| Registration UI, participant CRUD, printable rosters | Remaining Phase 2 work, tracked in the SRS acceptance audit. |
+| PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
+| Participant registration API and stored assignment | Event-scoped CRUD and latest snapshots implemented; quality verification passes, CI/native review required before delivery. |
+| Registration UI and printable rosters | Remaining Phase 2 work, tracked in the SRS acceptance audit. |
 
 ## What the core accepts and returns
 
