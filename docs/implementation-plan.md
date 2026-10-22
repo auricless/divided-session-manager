@@ -110,3 +110,5 @@ The 114-test suite passes with 177/177 service lines covered (100%) and 137/138 
 A deliberately stricter 100% branch check exposed an initial package-filter mismatch. The rule now uses the Java package name, `org.c3cavite.core.service`. The 100% probe fails against the actual 99.28% coverage, while a full verify with the ticket thresholds passes. The remaining uncovered branch is a null-gender guard for a manually constructed separated group; the validated entry point never creates one. No production algorithm changes or runtime dependencies were needed.
 
 The coverage iteration is implemented and verified locally, pending native review. PRs remain sequential. PR opening triggers review automatically; request another review only if an updated head has no automatic review queued or completed.
+
+The PR Maven workflow also publishes the JaCoCo HTML/XML directory as a commit-specific Actions artifact. Coverage failure remains a failing Maven check; an available report is uploaded even after a threshold failure, and missing reports cannot silently pass after a successful build. Live publication is verified separately from local coverage measurements.
