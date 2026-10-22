@@ -496,3 +496,39 @@ it('retries a failed participant read without requiring another event mutation',
     vi.useRealTimers();
   }
 });
+
+it('preserves participant drafts when remote configuration changes only the derived tier', async () => {
+  vi.useFakeTimers();
+  participants = [{ id: 'draft', name: 'Original', age: 18, gender: 'MALE', ageTier: 'YOUTH' }];
+  try {
+    render(<RegistrationPage eventId={event.id} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true }));
+    const form = () => screen.getByRole('form', { name: 'Register participant' });
+    fireEvent.change(within(form()).getByLabelText('Name', { exact: true }), {
+      target: { value: 'Unsaved name' },
+    });
+    fireEvent.change(within(form()).getByLabelText('Age'), { target: { value: '28' } });
+    currentEvent = {
+      ...currentEvent,
+      revision: 2,
+      config: {
+        ...config,
+        ageTierBoundaries: {
+          ...config.ageTierBoundaries,
+          TEENS: { minAge: 13, maxAge: 18 },
+          YOUTH: { minAge: 19, maxAge: 22 },
+        },
+      },
+    };
+    participants = [{ ...participants[0], ageTier: 'TEENS' }];
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(within(form()).getByLabelText('Name', { exact: true })).toHaveValue('Unsaved name');
+    expect(within(form()).getByLabelText('Age')).toHaveValue(28);
+    expect(screen.getByRole('cell', { name: 'TEENS' })).toBeVisible();
+  } finally {
+    vi.useRealTimers();
+  }
+});

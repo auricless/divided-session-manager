@@ -133,7 +133,7 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
         const person = roster.find((candidate) => candidate.id === previous.person.id) || null;
         const unchanged =
           person &&
-          ['name', 'age', 'gender', 'lifeStage', 'ageTier'].every(
+          ['name', 'age', 'gender', 'lifeStage'].every(
             (field) => person[field] === previous.person[field],
           );
         return unchanged ? previous : { version: previous.version + 1, person };
