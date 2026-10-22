@@ -10,10 +10,10 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
-| Docker and Compose | Earlier API/database topology passed CI in PR #13. SRS v1.1 three-service UI/API/database topology, private networks and database-aware readiness are prepared; actual-stack CI/native review pending. |
+| Docker and Compose | Independent React/Nginx, API and PostgreSQL containers use private networks and database-aware readiness. The container workflow verifies images, browser behavior, persistence and recovery; see deployment acceptance evidence. |
 | PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
 | Participant registration API and stored assignment | Delivered in PR #16 after PostgreSQL CI, concurrency/restart acceptance and native review. |
-| Registration UI, live display and print/CSV | React registration, two-second live display and print/CSV integration are being migrated and verified in the independent frontend; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records CI and review status. |
+| Registration UI, live display and print/CSV | Delivered in [PR #17](https://github.com/auricless/divided-session-manager/pull/17) after 24 frontend/183 PostgreSQL Java tests, six passing CI checks, clean native review and dependency remediation. |
 
 ## What the core accepts and returns
 
