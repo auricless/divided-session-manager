@@ -7,12 +7,12 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class SessionManagerApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(SessionManagerApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(SessionManagerApplication.class, args);
+  }
 
-    @Bean
-    GroupAssignmentService groupAssignmentService() {
-        return new GroupAssignmentService();
-    }
+  @Bean
+  GroupAssignmentService groupAssignmentService() {
+    return new GroupAssignmentService();
+  }
 }

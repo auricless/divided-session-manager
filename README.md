@@ -114,3 +114,5 @@ Spring Boot 4.1.1 is managed through a BOM imported only by the service module. 
 The PR workflow enforces the same JaCoCo thresholds through Maven verify and uploads the HTML/XML report as a `jacoco-pr-*` Actions artifact for 14 days. Reports are retained when a coverage check fails after report generation. A successful build without its expected coverage report fails artifact publication.
 
 Java style, formatting, bug checks, and SonarQube Cloud setup are documented in [Java quality checks](docs/java-quality.md).
+
+The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.

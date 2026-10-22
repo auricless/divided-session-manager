@@ -126,3 +126,5 @@ TDD: the startup test first failed because no Spring Boot application configurat
 CLI smoke checks started both `mvn spring-boot:run` from the service module and the packaged JAR on port 8080, verified the expected HTTP 404 before endpoints exist, and stopped both processes. The core dependency tree contains only test-scoped JUnit dependencies and no Spring dependencies.
 
 This branch still requires Java 17 CI and current-head native Codex review before merge. API-key review has been removed in favor of the subscription integration.
+
+After integrating the reviewed 114-test core and Java quality configuration, the bootstrap reactor passes 115 tests plus formatting, style, SpotBugs, and core coverage. Shared JaCoCo preparation/reporting now runs for both modules; the service startup test calls the real main method and generates service XML for SonarQube. Algorithm coverage thresholds remain core-specific. CI publishes both module reports.
