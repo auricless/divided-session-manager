@@ -111,6 +111,10 @@ def main():
     event = api('/api/v1/events', 'POST', {'name': 'Container acceptance', 'config': {'capSize': 6}}, 201)
     path = '/api/v1/events/' + event['id']
     try:
+        updated = api(path, 'PUT', {'name': 'Updated container acceptance', 'config': {'capSize': 6}})
+        assert updated['name'] == 'Updated container acceptance'
+        assert any(item['id'] == event['id'] and item['name'] == updated['name']
+                   for item in api('/api/v1/events'))
         people = []
         for name in ['=SUM(1,2)', 'Second attendee']:
             people.append(api(path + '/participants', 'POST',
@@ -134,7 +138,7 @@ def main():
         compose('down')
         compose('up', '--detach', '--wait', '--wait-timeout', '150')
         wait_recovery()
-        assert api(path)['name'] == 'Container acceptance'
+        assert api(path)['name'] == 'Updated container acceptance'
         assert len(api(path + '/participants')) == 2
         assert api(path + '/assignment') == final
 
