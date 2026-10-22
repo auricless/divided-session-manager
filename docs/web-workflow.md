@@ -7,7 +7,7 @@ Authority: SRS v1.1 section 9. React lives in `frontend/` and uses the existing 
 Start PostgreSQL and the API as described in [event API setup](event-api.md). Use Node 24.21.0 (at least 24.15 on the 24.x line) for the frontend:
 
 ```bash
-npm ci --prefix frontend
+npm ci --ignore-scripts --prefix frontend
 npm run dev --prefix frontend
 ```
 
@@ -45,3 +45,5 @@ Earlier Thymeleaf browser acceptance covered create/register, proposals/final, e
 - The React live view cleared an invalidated roster/disabled controls after a separate client registered, then automatically displayed a recomputed FINAL with two attendees. The participant edit was saved through React. CSV fetched through the same UI-origin API proxy parsed as four rows, twelve columns and two matching current attendees.
 - Browser automation timed out at participant-removal confirmation; that browser action is not claimed as passed. The React component test verifies confirm/cancel, owned DELETE and refreshed roster. Physical printing and a React-browser CSV download were not performed; component tests verify verification-before-print/export, and the HTTP CSV response is parsed independently.
 - Earlier browser Back checks reached an older running Thymeleaf process and are not evidence for the updated implementation. Persisted navigation, stale responses and single polling cycles are covered by the automated feed/React tests. Actual three-container acceptance remains SM-38–41.
+
+The frontend install policy runs CI's exact npm command against a local dependency with a marker-writing postinstall script. It first failed because installation executed that script; CI now uses `npm ci --ignore-scripts`, and the fixture installs without the marker. React tests and production build pass with lifecycle scripts disabled.
