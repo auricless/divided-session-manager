@@ -19,20 +19,15 @@ The original 28 functional rules and core evidence remain in [the core audit](sr
 | DEP-08 runtime security/size | Unprivileged UI/API; JRE-only API <300 MB; browser security headers | Updated image-size/user/tool and production proxy header checks enforced by actual-stack CI |
 | DEP-09 local operation/recovery | Restart policies, bounded graceful shutdown, logs/inspection/rebuild/retention/deletion/recovery instructions | Documented in container runtime; live database recovery enforced by actual-stack CI |
 | VER-01 tests/quality | React component/feed and parser regressions; Java PostgreSQL reactor; JaCoCo/Checkstyle/SpotBugs/formatter | 24 frontend and 185 Java tests pass locally with quality checks; Chromium local workflow passes |
-| VER-02 actual-stack acceptance | `container-checks.yml`, Chromium `e2e/registration.spec.js`, `smoke-container-stack.py` | Three-container runtime must pass CI; a local dev-server pass does not establish this criterion |
-| VER-03 review/security workflow | Sequential PRs; current-head CI/native review; authenticated Sonar active-risk inspection; dependency audit | PR #17 merged after clean CI/Sonar/native review. Deployment PR requires its own current-head CI/native/security gates |
+| VER-02 actual-stack acceptance | `container-checks.yml`, Chromium `e2e/registration.spec.js`, `smoke-container-stack.py` | Actual-stack CI run 39821249908 passes; a local dev-server pass alone does not establish this criterion |
+| VER-03 review/security workflow | Independent PRs in parallel, prerequisites ordered; current-head CI/native review; authenticated Sonar active-risk inspection; dependency audit | PR #17 and PR #18 merged after their own current-head CI/Sonar/native review gates |
 
-The local Docker daemon is unavailable. The [first preflight CI run](https://github.com/auricless/divided-session-manager/actions/runs/39817001524)
-passed the actual image/runtime/network/persistence checks. The deployment PR
-must repeat these checks at its current revision. CI validates a proposed
-merge commit; native review must separately cover the current PR head. Any review
-fix requires a failing regression, correction, passing checks and fresh review.
-
-
-[PR #18](https://github.com/auricless/divided-session-manager/pull/18) records the
-deployment delivery checks. Its application revision 128d023 passed all six
-checks and native review with no findings; Sonar marked the inherited histogram
-risk FIXED. The final acceptance addition verifies event updates/listing through
-the proxy as well as creation/deletion and persistence. Every updated PR head
-must pass the same CI/native/security gates before merge; ticket completion is
-recorded in the linked Notion tracker only after merge.
+[PR #18](https://github.com/auricless/divided-session-manager/pull/18) merged as
+`618b107da5a1a6ff8611c4ed58af80c888e5da6a` after all six CI checks and native
+review passed at `10179f3` with no findings or unresolved threads. Authenticated
+Sonar readback reported zero active dependency risks. [Actual-stack CI run
+39821249908](https://github.com/auricless/divided-session-manager/actions/runs/39821249908)
+verified the independent images, browser workflow, proxy/security/isolation,
+event and participant CRUD, durable data, and database outage/recovery.
+Local Docker access and physical printing were not verified; print-DOM and
+browser CSV download were verified. Later changes still require their own gates.

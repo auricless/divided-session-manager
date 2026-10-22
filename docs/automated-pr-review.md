@@ -4,7 +4,7 @@ Native Codex GitHub review supplies independent feedback; GitHub Actions supplie
 
 ## Setup
 
-Connect this repository and enable **Automatic review** in [Codex review settings](https://chatgpt.com/settings/code-review). This account setting cannot be enabled by repository YAML. PR opening already triggers review; do not immediately add `@codex review`. For an updated head, check for queued, running, or completed native activity before requesting one review.
+Connect this repository and enable **Automatic review** in [Codex review settings](https://chatgpt.com/settings/code-review). This account setting cannot be enabled by repository YAML. PR opening already triggers review; do not immediately add `@codex review`. For an updated head, check native activity before making its initial request. The bounded retry rule below is the only exception to avoiding duplicate requests.
 
 ## Context budget
 
@@ -22,8 +22,12 @@ Independent PRs can be developed, opened, reviewed, fixed, and merged in paralle
 
 Merge only after current-head CI and current-head review complete with no unresolved actionable findings, under the user's merge authorization. An older clean review, pending reaction, or quota failure is insufficient. This policy does not create a required GitHub check or change branch protection.
 
-## Slow or stalled reviews
+## Missing review response: one retry
 
-After roughly 30 minutes without a verdict, make one bounded diagnostic check: compare the requested SHA, latest native status/receipt, and any explicit failure or quota message. Report the unresolved gate and stop active polling until new evidence or user direction arrives. This is an observation threshold, not a service timeout or proof of worker failure.
+1. Record the PR number, current head SHA, initial trigger time, and request comment ID when applicable. Automatic review on PR opening counts as attempt one. Arrange a follow-up no later than 15 minutes after the trigger; do not poll continuously.
+2. At that follow-up, read the current head and native review activity. A completed review or actionable feedback for that head is a response; process it normally. A reaction, queued marker, or running marker alone is insufficient. If there is still no result, post exactly one `@codex review` retry for the unchanged head and record its time/comment ID. This bounded retry is allowed even if the original marker still says running.
+3. Check again no later than 15 minutes after the retry. If it also produces no result, notify the user with the PR link, head, request times and observed status, keep the merge blocked, and stop retrying. Do not send more tags for that head without new user direction. An explicit terminal authentication/quota error is actionable feedback: report it rather than hiding it behind repeated requests.
 
-GitHub's running marker does not reveal worker liveness, model, token consumption, queue time, or reasoning time. Do not duplicate requests, create empty commits, restart a review, or waive the gate merely because it is slow. No feature work should continue when the user has requested review-policy work first.
+Track attempts durably per PR/head, and reconcile existing comments before posting if a previous write's outcome is uncertain. A new head ends the old timer; inspect its automatic activity and track its own initial attempt. Closed, merged, or draft PRs need no retry. Independent PRs have separate timers and gates.
+
+Native status does not expose worker liveness, model, tokens, queue time, or reasoning time. A retry is not proof that the prior worker failed and does not relax the completed current-head review requirement. Use the thread's scheduled follow-up tool when leaving the turn; do not claim future monitoring without arranging it.

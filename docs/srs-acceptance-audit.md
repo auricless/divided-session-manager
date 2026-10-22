@@ -63,9 +63,9 @@ Persistence must stay outside core, use real PostgreSQL verification and repeata
 
 ## Revision 1.1 deployment acceptance
 
-Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets](web-deployment-requirements.md) map these to SM-36–41. React migration, separate UI image/proxy, database-aware API readiness, private three-container Compose and actual-stack CI are not complete until their own current-head tests/review and runtime evidence pass. Do not infer v1.1 completion from the earlier two-container or Thymeleaf evidence.
+Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets](web-deployment-requirements.md) map these to SM-36–41. React migration passed its gates in merged PR #17; separate UI image/proxy, database-aware API readiness, private three-container Compose and actual-stack CI passed their own gates in merged PR #18. Do not infer v1.1 completion from the earlier two-container or Thymeleaf evidence.
 
 
-[The deployment acceptance matrix](deployment-acceptance.md) maps every section 9 requirement to implementation, tests and precise pending runtime/review evidence.
+[The deployment acceptance matrix](deployment-acceptance.md) maps every section 9 requirement to implementation, tests and recorded runtime/review evidence.
 
 All 28 core IDs and 16 section 9 requirements have implementation/test or CI mappings. [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records React delivery; [PR #18](https://github.com/auricless/divided-session-manager/pull/18) records the three-container delivery checks. Current delivery status and merge evidence remain in their linked Notion tickets.
