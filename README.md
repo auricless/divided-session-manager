@@ -10,7 +10,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
-| Docker and Compose | Multi-stage JRE image, local stack, and CI smoke check are prepared. Docker build/runtime/size verification and review remain pending. |
+| Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
 
 ## What the core accepts and returns
@@ -57,7 +57,7 @@ FacilitatorException permission = new FacilitatorException(leader,
 AssignmentResult result = service.assign(config, participants, facilitators, List.of(permission));
 ```
 
-The code processes Youth segments first. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Other inputs are not comprehensively validated yet.
+The code processes Youth segments first. Configuration checks the required positive cap, positive target no larger than cap, a nonempty active-tier list without nulls, and valid age boundaries. Participant, facilitator and explicit exception inputs are validated before assignment.
 
 ALG-08 permits a one-person group only when it is the only group in its tier/gender segment. If the cap or enabled life-stage separation makes that impossible, the engine preserves those constraints and returns `MINIMUM_GROUP_SIZE` blockers. For example, three attendees under a cap of two remain a proposal with groups of two and one; the engine never raises the cap or silently merges life stages.
 
@@ -73,7 +73,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 ## Project plan
 
 - **Phase 1A — core library:** Core behavior, coverage checks, Java 17 CI, and native Codex review are complete and merged.
-- **Phase 1B — service wrapper (outside first release):** The Spring Boot module and `POST /api/v1/sessions/assign` are implemented locally with service tests. The wrapper/API passed review and merged; container verification is the remaining gate.
+- **Phase 1B — service wrapper (outside first release):** The Spring Boot module and `POST /api/v1/sessions/assign` are implemented locally with service tests. The wrapper/API and Docker/Compose passed CI and native review and merged in PRs #11–13.
 - **Later event platform:** The current proposal includes registration, an organizer review screen, persistence, group displays, and printable rosters. These are outside the first algorithm deliverable.
 
 ## Decisions to resolve
@@ -120,3 +120,5 @@ The PR workflow enforces the same JaCoCo thresholds through Maven verify and upl
 Java style, formatting, bug checks, and SonarQube Cloud setup are documented in [Java quality checks](docs/java-quality.md).
 
 The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.
+
+See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for requirement-to-test evidence and the remaining Phase 2 roadmap.

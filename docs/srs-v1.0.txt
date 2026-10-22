@@ -1,0 +1,425 @@
+﻿SOFTWARE REQUIREMENTS SPECIFICATION
+Small Group / Divided Session Manager
+Core Library — First Release
+Version
+	1.0.0 — Draft
+	Date
+	March 2026
+	Author
+	Personal Portfolio Project
+	Status
+	In Review
+	________________
+
+
+Table of Contents
+1. Introduction
+   1.1 Purpose
+   1.2 Scope
+   1.3 Definitions and Glossary
+   1.4 Document Overview
+
+
+2. Overall Description
+   2.1 Product Perspective
+   2.2 User Classes and Characteristics
+   2.3 Assumptions and Dependencies
+
+
+3. System Features & Functional Requirements
+   3.1 Event & Session Configuration
+   3.2 Participant Management
+   3.3 Facilitator Management
+   3.4 Group Assignment Algorithm
+   3.5 Output & Results
+
+
+4. Algorithm Design
+   4.1 Grouping Constraints
+   4.2 Assignment Logic
+   4.3 Edge Cases
+
+
+5. Non-Functional Requirements
+6. Technical Architecture
+7. Project Phases & Roadmap
+8. Out of Scope
+________________
+
+
+1. Introduction
+1.1 Purpose
+This document is the Software Requirements Specification (SRS) for the Small Group / Divided Session Manager — a backend core engine designed to automate the assignment of event participants into small groups with appropriate facilitators. It records the design, development, and testing requirements for the first release of the core library. This draft reflects the current product decisions for the first-release core library.
+
+
+1.2 Scope
+The first release is a reusable Java assignment library. A Spring Boot service wrapper is planned for a later milestone outside the first release, and a web application may consume it later. The core engine is responsible for:
+* Accepting participants, facilitators, event configuration, and explicit organizer overrides as input
+* Applying configurable grouping rules (gender separation, age tier, group size)
+* Assigning facilitators (Leader + optional Assistant) to each group
+* Returning a structured final assignment or a non-final proposal with actionable blockers
+
+
+This document defines the first-release core library. The Spring Boot service wrapper remains planned outside the first release. The web interface, user authentication, persistent storage, and roster publishing are later product work.
+
+
+1.3 Definitions and Glossary
+Term
+	Definition
+	Event
+	A church gathering that includes a Divided Session segment.
+	Divided Session
+	The portion of an event where attendees break into small groups for discussion.
+	Participant
+	An attendee registered for the event. Counted toward group size.
+	Facilitator
+	A trained volunteer assigned to lead a group. NOT counted toward group size.
+	Leader
+	The primary facilitator for a group. One per group; required.
+	Assistant
+	A secondary facilitator for a group. Optional; one per group.
+	Group
+	A set of participants plus their assigned facilitator(s).
+	Age Tier
+	A categorization of participants with configurable per-event boundaries; defaults are Teens (13–15), Youth (16–22), Young Adult (23+).
+	Life Stage
+	A sub-category within Young Adults: Student or Working Professional.
+	Gender Mode
+	A per-event flag: SEPARATED (default) or MIXED.
+	Target Size
+	The ideal number of participants per group (default: 4).
+	Cap Size
+	The maximum allowed participants per group, as configured by the event organizer. There is no system-enforced upper bound — the organizer is responsible for setting an appropriate value per event.
+	Assignment Result
+	The structured output: groups, a final or non-final proposal state, unassigned participants, and actionable blockers.
+	
+
+1.4 Document Overview
+Section 2 describes the product context. Section 3 defines functional requirements. Section 4 details the algorithm design. Section 5 covers non-functional requirements. Sections 6–8 address architecture, phasing, and scope boundaries.
+________________
+
+
+2. Overall Description
+2.1 Product Perspective
+The system originates from a real operational pain point observed in church event management. During events, a registration committee is responsible for manually registering walk-in participants and assigning them to small discussion groups in real time. As participant count grows, this becomes error-prone, inconsistent, and stressful for volunteers.
+
+
+Problem Statement
+It is challenging for the registration committee to manually identify and assign participants efficiently and effectively when the process is manual — especially as the number of participants increases. Grouping criteria including gender, age tier, life stage, group size, and facilitator availability must all be balanced simultaneously.
+	
+
+This system applies grouping rules to participant and facilitator data to produce a final assignment when all required conditions are met, or a non-final proposal that identifies required organizer intervention.
+
+
+2.2 User Classes and Characteristics
+User Class
+	Description
+	Interaction
+	Registration Committee
+	Volunteers managing the event-day registration desk.
+	Provides participant & facilitator data; receives group assignments.
+	Event Organizer
+	Plans the event; configures session rules and supplies explicit overrides when needed.
+	Sets event-level configuration and reviews or overrides proposed assignments.
+	Downstream Web App (Phase 2)
+	The web layer that wraps this engine.
+	Consumes the library/microservice API.
+	
+
+2.3 Assumptions and Dependencies
+* Participant data (name, age, gender, life stage) is provided at assignment time; the first-release library requires no registration database.
+* Facilitator availability is confirmed before the session begins.
+* A shortage of qualified Leaders produces a non-final proposal; no leaderless group may be finalized.
+* Typical event size is under 30 participants, though the algorithm should not be hard-coded to this limit.
+* Gender mode defaults to SEPARATED but is overridable per event.
+* The first-release library returns in-memory Java objects; persistence and the HTTP/JSON wrapper are later work.
+________________
+
+
+3. System Features & Functional Requirements
+Requirements are tagged with a unique ID and a priority level: HIGH (must have), MEDIUM (should have), LOW (nice to have).
+
+
+3.1 Event & Session Configuration
+The system shall accept an event configuration object that governs how grouping rules are applied for that session.
+
+
+ID
+	Requirement Description
+	Priority
+	CFG-01
+	The system shall use SEPARATED gender mode by default unless the event organizer selects MIXED for the event.
+	HIGH
+	CFG-02
+	The system shall use a default target group size of 4 participants unless the event organizer supplies another positive target size.
+	HIGH
+	CFG-03
+	The system shall require a maximum group cap parameter to be explicitly set by the event organizer. There is no system default — the organizer must provide this value for every event to encourage deliberate group size planning.
+	HIGH
+	CFG-04
+	The system shall accept active age tiers and configurable per-event age boundaries, using 13–15, 16–22, and 23+ as defaults.
+	HIGH
+	CFG-05
+	The system shall split Young Adults by STUDENT and WORKING_PROFESSIONAL life stage by default and allow the organizer to turn that split off per event.
+	MEDIUM
+	CFG-06
+	Configuration validation shall reject a missing cap, a target size of zero or less, a target larger than the cap, and invalid age boundaries such as gaps or overlaps. The cap remains hard for a run; an organizer may change the event cap and rerun.
+	HIGH
+	
+
+3.2 Participant Management
+A Participant is an event attendee to be assigned to a group. Each participant carries the attributes the algorithm needs.
+
+
+ID
+	Requirement Description
+	Priority
+	PRT-01
+	Each participant record shall contain: name, age (integer), and gender (MALE / FEMALE) for the first release.
+	HIGH
+	PRT-02
+	The system shall derive age tier from the participant's age using the event's configured boundaries, defaulting to Teens (13–15), Youth (16–22), and Young Adult (23+).
+	HIGH
+	PRT-03
+	Participants in the Young Adult tier shall carry a life stage attribute: STUDENT or WORKING_PROFESSIONAL.
+	MEDIUM
+	PRT-04
+	The system shall accept a list of zero or more participants as input. An empty list shall return an empty assignment result.
+	HIGH
+	PRT-05
+	Participants below age 13 shall be flagged with a warning and excluded from automated assignment (handled separately).
+	MEDIUM
+	
+
+3.3 Facilitator Management
+Facilitators are volunteers assigned to lead groups. They are not counted in participant group size.
+
+
+ID
+	Requirement Description
+	Priority
+	FAC-01
+	Each facilitator record shall contain: name, role (LEADER or ASSISTANT), gender, and a list of age tiers they are qualified for.
+	HIGH
+	FAC-02
+	Each final group shall have exactly one LEADER facilitator. A non-final proposal may show an unstaffed group as a blocker.
+	HIGH
+	FAC-03
+	Each group may optionally be assigned one ASSISTANT facilitator if available.
+	MEDIUM
+	FAC-04
+	In SEPARATED mode, the system shall use a facilitator of the group's gender by default. A different-gender assignment is allowed only through an explicit organizer exception.
+	MEDIUM
+	FAC-05
+	If qualified facilitators cannot cover all groups, the system shall consolidate within the configured cap where possible and return a non-final proposal with actionable blockers. It shall not finalize a leaderless group or relax a demographic rule automatically. An organizer may explicitly override facilitator qualification or gender preference; no reason field is required in the first release.
+	HIGH
+	
+
+3.4 Group Assignment Algorithm
+This is the core feature of the system. The algorithm takes all inputs and produces an assignment.
+
+
+ID
+	Requirement Description
+	Priority
+	ALG-01
+	In SEPARATED gender mode, participants shall only be placed in groups with participants of the same gender.
+	HIGH
+	ALG-02
+	Participants shall only be placed in groups with other participants of the same age tier.
+	HIGH
+	ALG-03
+	Within the Young Adult tier, if life-stage sub-grouping is enabled, Students and Working Professionals shall be placed in separate groups.
+	MEDIUM
+	ALG-04
+	The algorithm shall aim to produce groups at the target size before opening a new group.
+	HIGH
+	ALG-05
+	No group shall exceed the maximum cap size as configured for the event. The algorithm shall treat the configured cap as a hard constraint that cannot be exceeded regardless of facilitator availability.
+	HIGH
+	ALG-06
+	The algorithm shall distribute remaining participants as evenly as possible when a tier's count does not divide cleanly into the target size.
+	HIGH
+	ALG-07
+	The Youth tier shall be given priority for sub-group splitting if participant count exceeds the cap in that tier.
+	HIGH
+	ALG-08
+	The system shall not create a group with fewer than 2 participants unless it is the only group in its tier/gender segment.
+	MEDIUM
+	
+
+3.5 Output & Results
+ID
+	Requirement Description
+	Priority
+	OUT-01
+	The system shall return groups and an explicit final or non-final proposal state. A non-final proposal shall identify blockers that require organizer action.
+	HIGH
+	OUT-02
+	The result shall include metadata: total groups formed, total participants assigned, any warnings.
+	MEDIUM
+	OUT-03
+	The result shall be serializable to JSON for consumption by a downstream service.
+	HIGH
+	OUT-04
+	If a participant cannot be placed in a valid group, the result shall list that participant as unassigned with a reason. A group lacking a Leader remains a non-final proposal with a blocker.
+	HIGH
+	________________
+
+
+4. Algorithm Design
+This section describes the intended logic and flow of the grouping algorithm. This is not pseudocode — it is a specification of behavior the implementation must satisfy.
+
+
+4.1 Grouping Constraints (Priority Order)
+The algorithm shall apply constraints in the following order of priority. Higher priority constraints are never violated by lower priority ones.
+
+
+#
+	Constraint
+	Rule
+	1
+	Hard Cap
+	Groups must never exceed the configured cap size. This is a hard constraint. The organizer must set this value explicitly — there is no system default.
+	2
+	Gender Separation
+	When mode=SEPARATED, male and female participants must be in separate groups.
+	3
+	Age Tier Separation
+	Teens, Youth, and Young Adults must always be in separate groups.
+	4
+	Life Stage Separation
+	When enabled, YA Students and Working Professionals must be in separate groups.
+	5
+	Target Size
+	The algorithm aims for the configured target size (default 4). It deviates only when necessary to respect constraints 1–4.
+	6
+	Facilitator Coverage
+	Every final group must have exactly one LEADER. A proposed group without one is flagged as a blocker and cannot be finalized.
+	
+
+4.2 Assignment Logic (High-Level Flow)
+1. Validate event config, participant list, facilitator list, and explicit organizer overrides.
+2. Partition participants into segments: group by (gender if SEPARATED) × (age tier) × (life stage if enabled). Each unique combination is a segment.
+3. For each segment: calculate the number of groups needed. Groups = ceil(segment.size / targetSize). Ensure groups × cap >= segment.size.
+4. Distribute participants across groups in the segment as evenly as possible.
+5. Assign facilitators to each group: first assign one LEADER, then one ASSISTANT if available. In SEPARATED mode, use matching facilitator gender unless an explicit organizer exception permits a mismatch.
+6. Collect all groups into the result. Return a final assignment only when every group has a Leader; otherwise return a non-final proposal with actionable blockers and any unassigned participants.
+7. Return the AssignmentResult object.
+
+
+4.3 Edge Cases
+* Fewer participants than target size → one group is created with all participants.
+* More participants than qualified facilitators can cover → consolidate within the hard cap where possible, then return a non-final proposal if any group still lacks a Leader. An organizer may explicitly apply a facilitator exception and rerun.
+* All participants are the same tier/gender → single segment, straightforward split.
+* Zero participants in a tier → no groups created for that tier.
+* Participant with age outside defined tiers → flagged as unassigned with reason UNKNOWN_TIER.
+________________
+
+
+5. Non-Functional Requirements
+
+
+5.1 Performance
+* The algorithm shall produce a complete assignment for up to 200 participants in under 500ms on a standard developer machine.
+* The system shall be stateless — each invocation is independent.
+
+
+5.2 Reliability
+* The system shall never throw an unhandled exception for any valid input combination.
+* All edge cases shall be handled gracefully, returning a result with warnings rather than crashing.
+
+
+5.3 Maintainability
+* Business rules (group size, age tier boundaries) shall be configurable — not hard-coded in the algorithm logic.
+* Code shall follow clean code principles: single-responsibility methods, meaningful naming, no magic numbers.
+* JUnit test coverage shall target ≥ 80% of the core algorithm package.
+
+
+5.4 Portability
+* The first release shall be a standalone Java library (JAR) via Maven. The runnable microservice and Docker image are planned outside that release.
+* The later service wrapper shall expose a REST API for integration with a web application.
+________________
+
+
+6. Technical Architecture
+
+
+Technology Stack
+Java 17+  |  Maven (build & lifecycle)  |  JUnit 5 (unit testing)  |  Spring Boot (microservice wrapper)  |  Docker (containerization)  |  PostgreSQL (Phase 2 persistence)  |  REST/JSON (API contract)
+	
+
+6.1 First Release — Core Library
+The core engine will be a plain Java module with no web framework dependency. It exposes a single entry-point service class:
+Component
+	Responsibility
+	SessionConfig
+	Value object holding event-level configuration, including default gender mode and target size, required hard cap, active tiers, and configurable age boundaries.
+	Participant
+	Value object. Holds name, age, gender. Age tier derived automatically.
+	Facilitator
+	Value object. Holds name, role (LEADER/ASSISTANT), gender, qualified tiers.
+	Group
+	Holds a list of Participants + assigned Facilitators.
+	AssignmentResult
+	Wraps groups, final/proposal state, actionable blockers, warnings, and the unassigned list.
+	GroupAssignmentService
+	Primary entry point. Accepts config, participants, facilitators, and explicit overrides; recomputes or validates and returns AssignmentResult.
+	SegmentationStrategy
+	Partitions participants into segments by gender/tier/life stage.
+	FacilitatorAssigner
+	Assigns Leader + Assistant to each group using available facilitators.
+	
+
+6.2 Maven Project Structure
+The Maven module layout, including the planned service wrapper:
+* session-manager-core  — Pure Java algorithm library (no framework)
+* src/main/java/...  — Domain model + algorithm
+* src/test/java/...  — JUnit 5 tests
+* session-manager-service  — Spring Boot wrapper exposing REST API
+* Depends on session-manager-core as a Maven dependency
+* Dockerfile for containerization
+________________
+
+
+7. Project Phases & Roadmap
+
+
+Phase
+	Focus
+	Key Deliverables
+	Phase 1A(Core Library)
+	Domain model + algorithm
+	Participant, Facilitator, Group, and SessionConfig models; GroupAssignmentService with configurable defaults and explicit overrides; final/proposal result; JUnit 5 tests.
+	Phase 1B(Microservice)
+	REST wrapper + Docker, outside first release
+	Spring Boot app wrapping the core; POST /api/v1/sessions/assign endpoint; Dockerfile; docker-compose.yml for local dev.
+	Phase 2A(Web — Backend)
+	Persistence + API layer
+	PostgreSQL schema; event & participant CRUD endpoints; Spring Data JPA.
+	Phase 2B(Web — Frontend)
+	UI layer
+	React or Thymeleaf registration UI; real-time group display; print/export view.
+	
+
+Learning Value by Phase
+Phase 1A → Java OOP, clean code, unit testing (JUnit 5), Maven project structure.Phase 1B → Spring Boot, REST API design, Docker, microservice patterns.Phase 2A → SQL schema design, Spring Data JPA, database migrations (Flyway/Liquibase).Phase 2B → Frontend integration, UI/UX for non-technical users.
+	________________
+
+
+8. Out of Scope (First Release)
+The following items are outside the first-release core library and are deferred to later milestones:
+
+
+* User authentication and role-based access control
+* Persistent storage of participants, events, or assignment history
+* Web-based user interface
+* Email or push notifications to participants or facilitators
+* Web-based editing or re-assigning groups after initial assignment; the core library accepts explicit organizer overrides and recomputes or validates results
+* Multi-event or recurring event scheduling
+* Analytics or reporting dashboards
+* Mobile application
+
+
+These exclusions keep the first release focused and testable as a standalone Java library. The service wrapper and web workflow remain later milestones.
+Small Group / Divided Session Manager — SRS v1.0  |  Page  of

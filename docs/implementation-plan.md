@@ -89,7 +89,7 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 - SM-31 / PR #7: subscription-backed native review and API-free Java 17 Maven CI passed review and merged. Automatic review on PR open is verified; do not post a duplicate manual review request for the same head.
 - SM-8 / SM-9 / SM-11: model validation and SRS-compliant empty-qualification exceptions passed review and merged in PR #8.
 - SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, passed Java 17 CI and native review and merged in PR #9.
-- SM-20 / SM-21: Spring Boot wrapper and assignment API passed CI, Sonar and native review and merged in PRs #11 / #12. SM-22 / SM-23 container verification and review remain.
+- SM-20 / SM-21: Spring Boot wrapper and assignment API passed CI, Sonar and native review and merged in PRs #11 / #12. SM-22 / SM-23 passed container CI and native review and merged in PR #13.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
 
@@ -151,6 +151,10 @@ Acceptance criteria and commands are in [container runtime](container-runtime.md
 
 The original service-directory build-context checklist conflicts with the sibling core dependency. The documented command uses `docker build -f session-manager-service/Dockerfile ... .` from the root, and Compose uses the same context.
 
-Before implementation, `docker compose config --quiet` failed because no configuration existed. The new configuration passes, as do actionlint and shell syntax validation. Official base-image tags were verified through public registry manifests. Local Docker build is blocked by daemon socket permissions, so container execution and the <300 MB image requirement remain unverified. A dedicated CI job will build/start Compose, check runtime size and user/JRE properties, exercise the HTTP sample, and clean up.
+Before implementation, `docker compose config --quiet` failed because no configuration existed. The new configuration passes, as do actionlint and shell syntax validation. Official base-image tags were verified through public registry manifests. Local Docker daemon access was unavailable. CI run 39754948591 built/started Compose, verified size <300 MB and the non-root JRE runtime, exercised the HTTP sample, and cleaned up. A real connection-reset regression reproduced the initial startup race and passed after bounded curl retries. Native review of 916ed94 passed before PR #13 merged as 10e0b0f.
 
 The new reusable HTTP smoke script passes against the executable service JAR. That verifies its sample and assertions while preserving the separate Docker runtime verification gate.
+
+## Full SRS roadmap continuation
+
+The user authorized completion of all SRS roadmap deliverables on 2026-10-22. The [acceptance audit](srs-acceptance-audit.md) tracks each requirement and the new Notion tasks for PostgreSQL/event CRUD, participant CRUD/stored assignment, registration UI, and live display/print/export. Phase 2 remains incomplete until those features and their end-to-end evidence pass native review and CI.

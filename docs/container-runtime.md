@@ -34,6 +34,6 @@ Stop Compose with Ctrl+C, then run `docker compose down` to remove the local sta
 
 The **Container build and HTTP smoke** Actions job builds and starts Compose, checks size and non-root/JRE configuration, exercises the endpoint, and cleans up the stack. Maven verification runs separately; the image build skips running unit tests.
 
-At implementation time the local Docker daemon denied access. Image build, runtime behavior, and size remain unverified until that CI job runs successfully or local daemon access is available. Compose syntax and published image tags can be checked without daemon access; they do not prove a runnable image.
+Local Docker daemon access was unavailable. PR #13 CI run 39754948591 built and started the actual image, passed the <300 MB, non-root user and JRE-only checks, and verified the assignment HTTP response. Native review passed on 916ed94 before merge as 10e0b0f. The startup-reset regression first reproduced curl exit 56 and now passes with bounded retries. These are CI runtime results; no local Docker build is claimed.
 
 The reusable smoke script has passed against the packaged executable JAR on localhost, returning the expected final assignment. This validates the request/assertion path, not the Docker image.
