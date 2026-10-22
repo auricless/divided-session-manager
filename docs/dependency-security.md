@@ -39,3 +39,5 @@ This finding was not present as a package-version match in the public OSV result
 ## Authenticated terminal access
 
 The official SonarQube CLI (`sonar`) is installed locally and authenticated to the EU organization `auricless` using the OS keychain. No token is stored in this repository. Use `sonar auth status` to verify access and `sonar api get '/sca/issues-releases?projectKey=auricless_divided-session-manager&pullRequestKey=11&newlyIntroduced=true&pageSize=100'` to retrieve PR dependency-risk details. Substitute the actual PR number. The CLI routes Cloud v2 API requests and supplies credentials without printing them. Account authentication still needs a one-time sign-in when a session is first connected or expires.
+
+Authenticated Sonar readback after the Logback fix reports zero remaining dependency risks on PR #11. The dependent API branch also passes all 157 tests and the full quality build with the patched Jackson, Tomcat and logging dependencies.
