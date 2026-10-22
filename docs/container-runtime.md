@@ -108,3 +108,13 @@ Chromium's complete workflow and the HTTP/isolation/image/persistence/database
 recovery checks succeeded. This is CI evidence, not a local Docker run. The
 sequential deployment PR must repeat the checks on its own proposed merge and
 pass native review before delivery.
+
+
+Health probes do not require histogram metrics. The Actuator starter excludes
+the unused metrics starter and Jakarta metrics bindings because they pull
+HdrHistogram 2.2.2, which has no patched release for CVE-2026-14686. A classpath
+regression first detected that library, then passed with it absent while the
+healthy/unavailable/liveness tests still pass. The packaged JAR is also checked
+for its absence. This removes the dependency rather than accepting its risk.
+Browser setup invokes the installed, locked Playwright CLI directly; an
+executable policy regression rejects package-install fallback.

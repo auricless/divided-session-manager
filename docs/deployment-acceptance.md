@@ -18,7 +18,7 @@ The original 28 functional rules and core evidence remain in [the core audit](sr
 | DEP-07 credentials | Required environment password; no password default; no build argument/runtime UI database credentials | Missing-password contract passes; frontend build has no credential inputs |
 | DEP-08 runtime security/size | Unprivileged UI/API; JRE-only API <300 MB; browser security headers | Updated image-size/user/tool and production proxy header checks enforced by actual-stack CI |
 | DEP-09 local operation/recovery | Restart policies, bounded graceful shutdown, logs/inspection/rebuild/retention/deletion/recovery instructions | Documented in container runtime; live database recovery enforced by actual-stack CI |
-| VER-01 tests/quality | React component/feed and parser regressions; Java PostgreSQL reactor; JaCoCo/Checkstyle/SpotBugs/formatter | 24 frontend and 184 Java tests pass locally with quality checks; Chromium local workflow passes |
+| VER-01 tests/quality | React component/feed and parser regressions; Java PostgreSQL reactor; JaCoCo/Checkstyle/SpotBugs/formatter | 24 frontend and 185 Java tests pass locally with quality checks; Chromium local workflow passes |
 | VER-02 actual-stack acceptance | `container-checks.yml`, Chromium `e2e/registration.spec.js`, `smoke-container-stack.py` | Three-container runtime must pass CI; a local dev-server pass does not establish this criterion |
 | VER-03 review/security workflow | Sequential PRs; current-head CI/native review; authenticated Sonar active-risk inspection; dependency audit | PR #17 merged after clean CI/Sonar/native review. Deployment PR requires its own current-head CI/native/security gates |
 

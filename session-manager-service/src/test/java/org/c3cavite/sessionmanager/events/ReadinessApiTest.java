@@ -49,6 +49,12 @@ class ReadinessApiTest {
   }
 
   @Test
+  void healthOnlyRuntimeDoesNotIncludeUnpatchedHistogramMetrics() {
+    assertThrows(
+        ClassNotFoundException.class, () -> Class.forName("org.HdrHistogram.DoubleHistogram"));
+  }
+
+  @Test
   void reportsReadyThenUnavailableWhenItsDatabaseStops() throws Exception {
     var ready = get("readiness");
     assertEquals(200, ready.statusCode(), ready.body());

@@ -14,6 +14,7 @@ on:
       - 'scripts/smoke-container-stack.py'
       - 'scripts/test-compose-contract.py'
       - 'scripts/test-runtime-tool-policy.py'
+      - 'scripts/test-frontend-install-policy.py'
       - 'scripts/smoke-assignment-api.sh'
       - 'scripts/test-smoke-assignment-api.py'
       - '.github/workflows/container-checks.yml'
@@ -54,12 +55,13 @@ jobs:
         run: |
           python3 scripts/test-compose-contract.py
           python3 scripts/test-runtime-tool-policy.py
+          python3 scripts/test-frontend-install-policy.py
           python3 scripts/test-smoke-assignment-api.py
       - name: Install browser acceptance tools
         working-directory: frontend
         run: |
           npm ci --ignore-scripts
-          npm exec -- playwright install --with-deps chromium
+          node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Build and start all three containers
         run: docker compose -p session-manager-ci up --build --detach --wait --wait-timeout 150
       - name: Exercise the stateless assignment endpoint through the UI proxy
