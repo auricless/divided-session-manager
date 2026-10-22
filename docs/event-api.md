@@ -13,7 +13,17 @@ docker compose up --build --detach --wait
 
 The UI and API proxy are at localhost:8080. The API and PostgreSQL ports are private by default. The `postgres-data` volume survives container recreation. `docker compose down` retains it; `docker compose down --volumes` deletes it. Retain the password when reusing the existing volume; changing an environment variable does not change an initialized PostgreSQL account's password.
 
-For a host JVM, opt into the loopback database port with `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db`, then export `DATABASE_PASSWORD="$POSTGRES_PASSWORD"` and run the documented Maven/JAR command. Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. Do not put credentials in source files.
+For a host JVM, stop the full stack to free port 8080, then start only the database with its loopback port exposed. Reuse the database password set above:
+
+```sh
+docker compose down
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait db
+export DATABASE_PASSWORD="$POSTGRES_PASSWORD"
+mvn -pl session-manager-service -am package -DskipTests
+java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar
+```
+
+The API listens on localhost:8080. In another terminal, start Vite as described in [frontend development](web-workflow.md). Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. If you change `DB_PORT`, update `DATABASE_URL` to match. Do not put credentials in source files.
 
 ## Event contract
 
