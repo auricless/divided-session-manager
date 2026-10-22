@@ -90,3 +90,20 @@ it('does not let a scheduled background poll cancel an action refresh', async ()
   await flush();
   expect(vi.getTimerCount()).toBe(1);
 });
+
+it('restores polling immediately even when a pre-navigation action has not settled', async () => {
+  feed.start();
+  answer(0, 1);
+  await flush();
+  const action = feed.refresh();
+  window.dispatchEvent(new Event('pagehide'));
+  window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+  expect(requests).toHaveLength(6);
+  answer(4, 3);
+  await flush();
+  answer(2, 2);
+  expect(await action).toBeNull();
+  await flush();
+  expect(snapshots.at(-1).revision).toBe(3);
+  expect(vi.getTimerCount()).toBe(1);
+});

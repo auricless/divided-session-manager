@@ -125,7 +125,19 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
     const requests = rosterRequests.current;
     const current = ++requests.sequence;
     const roster = await api(`${path}/participants`);
-    if (requests.active && current === requests.sequence) setParticipants(roster);
+    if (requests.active && current === requests.sequence) {
+      setParticipants(roster);
+      setEditor((previous) => {
+        if (!previous.person) return previous;
+        const person = roster.find((candidate) => candidate.id === previous.person.id) || null;
+        const unchanged =
+          person &&
+          ['name', 'age', 'gender', 'lifeStage', 'ageTier'].every(
+            (field) => person[field] === previous.person[field],
+          );
+        return unchanged ? previous : { version: previous.version + 1, person };
+      });
+    }
   }, [path]);
   const eventRevision = assignment.event?.revision;
   useEffect(() => {
@@ -216,6 +228,7 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
       <div className="columns">
         <section className="card">
           <h2>Register participant</h2>
+          <p className="muted">Remote changes to the participant being edited refresh this form.</p>
           <ParticipantEditor
             key={editor.version}
             person={editor.person}

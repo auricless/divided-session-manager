@@ -66,6 +66,7 @@ export function createAssignmentFeed(eventPath, options) {
     ++sequence;
     ++pollCycle;
     request?.abort();
+    actionInFlight = null;
     window.clearTimeout(timer);
   }
   function hide() {

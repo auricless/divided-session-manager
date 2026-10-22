@@ -421,3 +421,51 @@ it('refreshes participant counts and rows after remote edits, deletions and cach
     vi.useRealTimers();
   }
 });
+
+it('synchronizes the selected participant on remote edits and clears it on remote deletion', async () => {
+  vi.useFakeTimers();
+  participants = [{ id: 'remote', name: 'Original', age: 18, gender: 'MALE', ageTier: 'YOUTH' }];
+  try {
+    render(<RegistrationPage eventId={event.id} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true }));
+    const nameInput = () =>
+      within(screen.getByRole('form', { name: 'Register participant' })).getByLabelText('Name', {
+        exact: true,
+      });
+    fireEvent.change(nameInput(), { target: { value: 'Unsaved draft' } });
+    currentEvent = { ...currentEvent, revision: 2 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(nameInput()).toHaveValue('Unsaved draft');
+    participants = [{ ...participants[0], name: 'Remote correction', age: 19 }];
+    currentEvent = { ...currentEvent, revision: 3 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(nameInput()).toHaveValue('Remote correction');
+    participants = [];
+    currentEvent = { ...currentEvent, revision: 4 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(nameInput()).toHaveValue('');
+    expect(document.querySelector('input[name="participantId"]')).toHaveValue('');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('reloads the event list after cached restoration and ignores a late pre-navigation response', async () => {
+  const pending = [];
+  api.mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+  const view = render(<EventList />);
+  act(() => window.dispatchEvent(new Event('pagehide')));
+  await act(async () =>
+    window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true })),
+  );
+  expect(pending).toHaveLength(2);
+  await act(async () => pending[1]([{ id: 'new', name: 'New event' }]));
+  await act(async () => pending[0]([]));
+  expect(screen.getByRole('link', { name: 'New event' })).toHaveAttribute('href', '/events/new');
+  view.unmount();
+  window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+  expect(pending).toHaveLength(2);
+});

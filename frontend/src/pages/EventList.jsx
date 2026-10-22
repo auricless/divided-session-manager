@@ -9,13 +9,37 @@ export function EventList({ navigate = navigateTo }) {
   const error = (message) => setFeedback({ message, error: true });
   useTitle('Events', 'Session Manager');
   useEffect(() => {
-    const request = new AbortController();
-    api('/api/v1/events', 'GET', undefined, { signal: request.signal })
-      .then(setEvents)
-      .catch((problem) => {
-        if (!request.signal.aborted) setFeedback({ message: problem.message, error: true });
-      });
-    return () => request.abort();
+    let request;
+    function load() {
+      request?.abort();
+      const current = new AbortController();
+      request = current;
+      api('/api/v1/events', 'GET', undefined, { signal: current.signal })
+        .then((value) => {
+          if (!current.signal.aborted) {
+            setEvents(value);
+            setFeedback({ message: '', error: false });
+          }
+        })
+        .catch((problem) => {
+          if (!current.signal.aborted) setFeedback({ message: problem.message, error: true });
+        });
+    }
+    const hide = () => request?.abort();
+    const restore = (event) => {
+      if (event.persisted) {
+        setEvents(null);
+        load();
+      }
+    };
+    window.addEventListener('pagehide', hide);
+    window.addEventListener('pageshow', restore);
+    load();
+    return () => {
+      hide();
+      window.removeEventListener('pagehide', hide);
+      window.removeEventListener('pageshow', restore);
+    };
   }, []);
   async function create(form) {
     const fields = new FormData(form);
