@@ -10,10 +10,10 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
-| Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
+| Docker and Compose | Independent React/Nginx, API and PostgreSQL containers use private networks and database-aware readiness. The container workflow verifies images, browser behavior, persistence and recovery; see deployment acceptance evidence. |
 | PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
 | Participant registration API and stored assignment | Delivered in PR #16 after PostgreSQL CI, concurrency/restart acceptance and native review. |
-| Registration UI, live display and print/CSV | React registration, two-second live display and print/CSV integration are being migrated and verified in the independent frontend; [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records CI and review status. |
+| Registration UI, live display and print/CSV | Delivered in [PR #17](https://github.com/auricless/divided-session-manager/pull/17) after 24 frontend/183 PostgreSQL Java tests, six passing CI checks, clean native review and dependency remediation. |
 
 ## What the core accepts and returns
 
@@ -113,7 +113,7 @@ Alternatively, after packaging, run `java -jar session-manager-service/target/se
 
 POST the [sample request](session-manager-service/examples/assign-request.json) to `/api/v1/sessions/assign`; see the [API contract and curl instructions](docs/assignment-api.md). Successful computations return final assignments or proposals with blockers. Invalid input returns HTTP 400 with a clean message. The stateless assignment endpoint stores no request data. The separate event API persists event configuration in PostgreSQL; see [event API and database setup](docs/event-api.md).
 
-For the container setup, set `POSTGRES_PASSWORD`, then run `docker compose up --build` from the repository root and use the same sample on localhost:8080. See [container commands and verification status](docs/container-runtime.md).
+For the complete UI/API/database stack, set `POSTGRES_PASSWORD`, then run `docker compose up --build --detach --wait` from the repository root. Open http://localhost:8080/events; API samples use that same UI origin. Only the configurable UI port is published by default. See [container commands and verification status](docs/container-runtime.md).
 
 Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 
@@ -125,6 +125,6 @@ Java style, formatting, bug checks, and SonarQube Cloud setup are documented in 
 
 The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.
 
-See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for core/API evidence and the [React/container requirements](docs/web-deployment-requirements.md) for the remaining v1.1 deployment work.
+See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for core/API evidence and the [React/container requirements](docs/web-deployment-requirements.md) for v1.1 deployment requirements and verification.
 
 For [React registration, live display and roster export](docs/web-workflow.md), run the frontend separately during development. The backend no longer serves HTML routes. The three-container production-style local stack is tracked by SM-38–41.

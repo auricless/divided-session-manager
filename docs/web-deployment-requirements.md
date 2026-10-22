@@ -6,12 +6,12 @@ The required topology is browser -> UI static server/reverse proxy -> Spring Boo
 
 | Work | Requirement coverage | Notion task | State |
 | --- | --- | --- | --- |
-| React event/config/participant/facilitator workflow | WEB-01/02, VER-01/03 | [SM-36](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) | Migrating the unmerged PR #17; old Thymeleaf evidence is historical |
-| React live/proposal/print/export and lifecycle safety | WEB-03/04, VER-01/03 | [SM-37](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) | Migrating PR #17; preserve revision/navigation regressions |
-| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | To Do |
-| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | To Do |
-| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | To Do |
-| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | To Do |
+| React event/config/participant/facilitator workflow | WEB-01/02, VER-01/03 | [SM-36](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) | Delivered in PR #17; current-head CI/native review passed before merge |
+| React live/proposal/print/export and lifecycle safety | WEB-03/04, VER-01/03 | [SM-37](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) | Delivered in PR #17; 24 frontend tests and current-head review passed |
+| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | Implemented; preflight CI passed, deployment PR CI/native gates required |
+| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | Implemented; preflight CI passed, deployment PR CI/native gates required |
+| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | Implemented; preflight CI passed, deployment PR CI/native gates required |
+| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | Implemented; preflight CI passed, deployment PR CI/native gates required |
 
 ## Delivery order and acceptance
 
@@ -22,3 +22,5 @@ Only the UI's configurable localhost port is published by default. UI/API and AP
 Compose waits for healthy PostgreSQL, database-aware API readiness and the UI server. Named storage survives normal shutdown/recreation. UI/API runtimes stay unprivileged; the API image remains below 300 MB with no Node, Maven or JDK. CI must build/run all three containers, verify routing/health/isolation and exercise persistence after recreation. React component/lifecycle tests retain the stale-revision and back/forward fixes; existing PostgreSQL Java tests, algorithm coverage and quality/security gates remain required.
 
 Public deployment, auth/TLS, Kubernetes, clustering, autoscaling, backup policy and extra business services are not specified by this revision.
+
+[Detailed section 9 acceptance evidence](deployment-acceptance.md) distinguishes local checks from the required actual-stack CI results.

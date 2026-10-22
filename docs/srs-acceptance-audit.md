@@ -56,11 +56,16 @@ Core test classes below are in `session-manager-core/src/test/java/org/c3cavite/
 | Performance/reliability evidence and full traceability | Acceptance tests and this audit added; PR checks/review required | [Audit](https://app.notion.com/p/40161e61aca181b4aa8ff6ab5001c772) |
 | PostgreSQL schema, Spring Data JPA, event CRUD | Delivered in PR #15 after PostgreSQL CRUD/restart CI, native review and dependency remediation | [Persistence and events](https://app.notion.com/p/40161e61aca181ba8c4afb8636a15c26) |
 | Participant CRUD and event workflow integration | Delivered in PR #16 with 180 PostgreSQL tests and clean exact-head review; rename preservation regression included | [Participants and assignment](https://app.notion.com/p/40161e61aca181e88ec4e6098cd6ad5c) |
-| React registration UI | Migrating PR #17 to the now-required React UI; old Thymeleaf browser evidence is historical; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Registration UI](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) |
-| Real-time group display, print/export | CSV API retained; React live renderer/print controls preserve revision and navigation regression coverage; current React browser verification and review required; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Display and export](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) |
+| React registration UI | Delivered React UI in merged PR #17 with 24 frontend tests and clean native review; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Registration UI](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) |
+| Real-time group display, print/export | Delivered in merged PR #17 after revision/navigation/printing/editor regressions and clean native review; [PR #17 CI and review](https://github.com/auricless/divided-session-manager/pull/17) | [Display and export](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) |
 
 Persistence must stay outside core, use real PostgreSQL verification and repeatable migrations, and retain the existing stateless assignment API. Store only the current event assignment needed for cross-client display; roster/config edits must invalidate it. This does not add unspecified assignment-history or scheduling features. UI and exports must preserve proposal states and explicit permissions and escape untrusted names.
 
 ## Revision 1.1 deployment acceptance
 
 Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets](web-deployment-requirements.md) map these to SM-36–41. React migration, separate UI image/proxy, database-aware API readiness, private three-container Compose and actual-stack CI are not complete until their own current-head tests/review and runtime evidence pass. Do not infer v1.1 completion from the earlier two-container or Thymeleaf evidence.
+
+
+[The deployment acceptance matrix](deployment-acceptance.md) maps every section 9 requirement to implementation, tests and precise pending runtime/review evidence.
+
+All 28 core IDs and 16 section 9 requirements have implementation/test or CI mappings. [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records React delivery; [PR #18](https://github.com/auricless/divided-session-manager/pull/18) records the three-container delivery checks. Current delivery status and merge evidence remain in their linked Notion tickets.

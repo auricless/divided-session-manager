@@ -65,3 +65,19 @@ ESLint run. A separate process tests the Unicode line-separator input that hung
 the old parser, with a timeout protecting the test runner. This is a development
 tool dependency; no URI library is included in the browser bundle. Revisit the
 override when ESLint drops Ajv 6 or the upstream dependency is repaired.
+
+
+## Container acceptance update (2026-10-23)
+
+The frontend now has 24 passing component/feed/parser tests, including stored
+participant editor synchronization, preservation across derived-tier changes,
+event-list cache restoration and transient roster-read retries. A CLI Chromium
+test also passes against the local independent React/API servers. The first
+three-container preflight CI run
+[39817001524](https://github.com/auricless/divided-session-manager/actions/runs/39817001524)
+built the independent images and passed that browser workflow through the real
+Nginx proxy: registration, proposal/FINAL, cross-client invalidation/recompute,
+current roster DOM captured during a mocked print callback and actual browser
+CSV downloading. Physical printing remains untested. Current deployment PR
+checks/review remain required; the older unperformed-download wording above
+records the earlier manual acceptance boundary.

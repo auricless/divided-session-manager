@@ -1,0 +1,8 @@
+# Opt in when running a host-side API/debugger or database client.
+services:
+  session-manager-service:
+    ports:
+      - "127.0.0.1:${API_PORT:-8081}:8080"
+  db:
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
