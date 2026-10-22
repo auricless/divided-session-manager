@@ -67,3 +67,5 @@ Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets
 
 
 [The deployment acceptance matrix](deployment-acceptance.md) maps every section 9 requirement to implementation, tests and precise pending runtime/review evidence.
+
+All 28 core IDs and 16 section 9 requirements have implementation/test or CI mappings. [PR #17](https://github.com/auricless/divided-session-manager/pull/17) records React delivery; [PR #18](https://github.com/auricless/divided-session-manager/pull/18) records the three-container delivery checks. Current delivery status and merge evidence remain in their linked Notion tickets.

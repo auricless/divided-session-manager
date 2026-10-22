@@ -11,7 +11,7 @@ The original 28 functional rules and core evidence remain in [the core audit](sr
 | WEB-04 print/CSV | Exact-refresh snapshot committed before print; CSV API escaping, proposal/blocker/warning details and invalidation checks | Component and Chromium DOM-at-print tests pass; actual browser CSV download passes; physical printer untested |
 | DEP-01 independent images | Node build/static Nginx runtime; Java build/JRE runtime; PostgreSQL 17.11 | Image build/runtime tools and users checked by actual-stack CI; preflight passes |
 | DEP-02 Compose orchestration | Three services, one documented start command | Resolved Compose contract passes; runtime preflight CI passes |
-| DEP-03 same-origin routes/proxy | Nginx `/api/` upstream retains paths and backend errors; direct React routes/static assets | HTTP route/asset/error checks and Chromium through production proxy in CI; pending |
+| DEP-03 same-origin routes/proxy | Nginx `/api/` upstream retains paths and backend errors; direct React routes/static assets | HTTP route/asset/error checks and Chromium through production proxy pass in preflight and PR CI |
 | DEP-04 private networks/ports | App network UI/API; internal data network API/database; only configurable UI loopback port by default; explicit debug override | Resolved contract passes; running-container network/port checks enforced by actual-stack CI |
 | DEP-05 startup/health | PostgreSQL health -> database-aware API readiness -> UI; minimal health payloads | Java readiness regression passes (healthy -> unavailable, liveness stays UP); real PostgreSQL outage/recovery preflight passes |
 | DEP-06 durable data | Named PostgreSQL volume; existing Flyway migrations and ORM validation | Prior event/participant restart tests pass; full Compose down/up persistence check enforced by actual-stack CI |
@@ -27,3 +27,12 @@ passed the actual image/runtime/network/persistence checks. The deployment PR
 must repeat these checks at its current revision. CI validates a proposed
 merge commit; native review must separately cover the current PR head. Any review
 fix requires a failing regression, correction, passing checks and fresh review.
+
+
+[PR #18](https://github.com/auricless/divided-session-manager/pull/18) records the
+deployment delivery checks. Its application revision 128d023 passed all six
+checks and native review with no findings; Sonar marked the inherited histogram
+risk FIXED. The final acceptance addition verifies event updates/listing through
+the proxy as well as creation/deletion and persistence. Every updated PR head
+must pass the same CI/native/security gates before merge; ticket completion is
+recorded in the linked Notion tracker only after merge.

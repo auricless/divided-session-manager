@@ -125,6 +125,6 @@ Java style, formatting, bug checks, and SonarQube Cloud setup are documented in 
 
 The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.
 
-See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for core/API evidence and the [React/container requirements](docs/web-deployment-requirements.md) for the remaining v1.1 deployment work.
+See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for core/API evidence and the [React/container requirements](docs/web-deployment-requirements.md) for v1.1 deployment requirements and verification.
 
 For [React registration, live display and roster export](docs/web-workflow.md), run the frontend separately during development. The backend no longer serves HTML routes. The three-container production-style local stack is tracked by SM-38–41.
