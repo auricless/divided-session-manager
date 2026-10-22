@@ -10,6 +10,7 @@ on:
       - '.dockerignore'
       - 'docker-compose.yml'
       - 'scripts/smoke-assignment-api.sh'
+      - 'scripts/test-smoke-assignment-api.py'
       - '.github/workflows/container-checks.yml'
 
 permissions:
@@ -37,6 +38,8 @@ jobs:
             echo '::error::Container verification must test the proposed merge with the base branch.'
             exit 1
           fi
+      - name: Test smoke startup retries
+        run: python3 scripts/test-smoke-assignment-api.py
       - name: Validate Compose configuration
         run: docker compose config --quiet
       - name: Build and start the service

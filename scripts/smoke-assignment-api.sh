@@ -6,8 +6,10 @@ base_url=${1:-http://127.0.0.1:8080}
 response_file=$(mktemp)
 trap 'rm -f "$response_file"' EXIT HUP INT TERM
 
+# The assignment endpoint is stateless, so replaying this sample POST is safe.
+# Container startup can reset a connection before the HTTP listener is ready.
 curl --fail-with-body --silent --show-error \
-  --retry 30 --retry-connrefused --retry-delay 1 --retry-max-time 45 \
+  --retry 30 --retry-all-errors --retry-delay 1 --retry-max-time 45 \
   --connect-timeout 2 --max-time 5 \
   "$base_url/api/v1/sessions/assign" \
   -H 'Content-Type: application/json' \
