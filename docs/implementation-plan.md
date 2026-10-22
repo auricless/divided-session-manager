@@ -88,7 +88,7 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 
 - SM-31 / PR #7: subscription-backed native review and API-free Java 17 Maven CI passed review and merged. Automatic review on PR open is verified; do not post a duplicate manual review request for the same head.
 - SM-8 / SM-9 / SM-11: model validation and SRS-compliant empty-qualification exceptions passed review and merged in PR #8.
-- SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, awaiting their sequential native review.
+- SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, passed Java 17 CI and native review and merged in PR #9.
 - SM-20–23: complete the later Spring Boot wrapper, assignment endpoint, Dockerfile, and local Compose setup as a separate milestone after the core implementation.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
@@ -109,9 +109,13 @@ The 114-test suite passes with 177/177 service lines covered (100%) and 137/138 
 
 A deliberately stricter 100% branch check exposed an initial package-filter mismatch. The rule now uses the Java package name, `org.c3cavite.core.service`. The 100% probe fails against the actual 99.28% coverage, while a full verify with the ticket thresholds passes. The remaining uncovered branch is a null-gender guard for a manually constructed separated group; the validated entry point never creates one. No production algorithm changes or runtime dependencies were needed.
 
-The coverage iteration is implemented and verified locally, pending native review. PRs remain sequential. PR opening triggers review automatically; request another review only if an updated head has no automatic review queued or completed.
+The coverage iteration passed Java 17 CI and native review of ef01180 and merged in PR #9 as 4dee986. PRs remain sequential. PR opening triggers review automatically; request another review only if an updated head has no automatic review queued or completed.
 
 The PR Maven workflow also publishes the JaCoCo HTML/XML directory as a commit-specific Actions artifact. Coverage failure remains a failing Maven check; an available report is uploaded even after a threshold failure, and missing reports cannot silently pass after a successful build. Live publication is verified separately from local coverage measurements.
+
+## Java quality workflow
+
+User-requested Checkstyle, Google Java Format, SpotBugs, and SonarQube Cloud integration are tracked in [the quality plan](java-quality.md). This is engineering tooling, without changes to SRS business behavior.
 
 ## Phase 1B bootstrap: SM-20
 

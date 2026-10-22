@@ -8,7 +8,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 | Area | State |
 | --- | --- |
-| `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Automated review and merge gates remain before Phase 1A is complete. |
+| `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper with a startup test. No assignment endpoint yet; automated review is pending. |
 | Docker and Compose | Not implemented. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
@@ -72,7 +72,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 
 ## Project plan
 
-- **Phase 1A — core library:** Behavior and coverage checks are implemented locally. Finish automated PR review and merge the remaining changes before marking the milestone complete.
+- **Phase 1A — core library:** Core behavior, coverage checks, Java 17 CI, and native Codex review are complete and merged.
 - **Phase 1B — service wrapper (planned, outside first release):** Add the Spring Boot module, `POST /api/v1/sessions/assign`, service tests, and runnable container setup after the core contract is stable.
 - **Later event platform:** The current proposal includes registration, an organizer review screen, persistence, group displays, and printable rosters. These are outside the first algorithm deliverable.
 
@@ -112,3 +112,5 @@ Spring Boot 4.1.1 is managed through a BOM imported only by the service module. 
 `mvn verify` generates `session-manager-core/target/site/jacoco/index.html` and `jacoco.xml`. The report includes domain classes, while coverage requirements apply only to `org.c3cavite.core.service`. A deliberately stricter 100% branch probe was verified to fail, confirming that the package filter enforces the rule. The one uncovered branch is the null-gender guard for a manually constructed group in SEPARATED mode; the validated assignment entry point does not create that combination.
 
 The PR workflow enforces the same JaCoCo thresholds through Maven verify and uploads the HTML/XML report as a `jacoco-pr-*` Actions artifact for 14 days. Reports are retained when a coverage check fails after report generation. A successful build without its expected coverage report fails artifact publication.
+
+Java style, formatting, bug checks, and SonarQube Cloud setup are documented in [Java quality checks](docs/java-quality.md).
