@@ -40,10 +40,12 @@ Earlier Thymeleaf browser acceptance covered create/register, proposals/final, e
 
 ## React migration acceptance (2026-10-22)
 
-- Clean npm install, ESLint/React-hooks/Prettier checks, 13 React/feed tests, production build and npm dependency audit pass; no reported dependency vulnerabilities. Full PostgreSQL Java quality verification passes all 183 tests.
+- Clean npm install, ESLint/React-hooks/Prettier checks, 14 React/feed tests, production build and npm dependency audit pass; no reported dependency vulnerabilities. Full PostgreSQL Java quality verification passes all 183 tests.
 - Against a confirmed restarted API-only JAR (backend /events returns 404) and separate Vite server, actual browser acceptance created an event with an explicit cap, retained invalid Young Adult input, saved the corrected attendee, showed a leaderless proposal, reached FINAL with an eligible leader, displayed explicit exceptions/reset and returned to a proposal after withdrawal.
 - The React live view cleared an invalidated roster/disabled controls after a separate client registered, then automatically displayed a recomputed FINAL with two attendees. The participant edit was saved through React. CSV fetched through the same UI-origin API proxy parsed as four rows, twelve columns and two matching current attendees.
 - Browser automation timed out at participant-removal confirmation; that browser action is not claimed as passed. The React component test verifies confirm/cancel, owned DELETE and refreshed roster. Physical printing and a React-browser CSV download were not performed; component tests verify verification-before-print/export, and the HTTP CSV response is parsed independently.
 - Earlier browser Back checks reached an older running Thymeleaf process and are not evidence for the updated implementation. Persisted navigation, stale responses and single polling cycles are covered by the automated feed/React tests. Actual three-container acceptance remains SM-38–41.
 
 The frontend install policy runs CI's exact npm command against a local dependency with a marker-writing postinstall script. It first failed because installation executed that script; CI now uses `npm ci --ignore-scripts`, and the fixture installs without the marker. React tests and production build pass with lifecycle scripts disabled.
+
+Native review also reproduced a refresh-before-print race: the print callback still saw the previous DOM while React had queued the new roster. A failing regression now records the DOM inside `window.print`; the click handler commits the exact verified snapshot synchronously before opening the dialog. The test observes the new attendee/count, not the old roster.

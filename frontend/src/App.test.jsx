@@ -294,3 +294,45 @@ it('exports only after its own refresh returns a current snapshot', async () => 
   await waitFor(() => expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled());
   expect(navigate).toHaveBeenCalledTimes(1);
 });
+
+it('commits a newly refreshed roster to the DOM before opening the print dialog', async () => {
+  const group = (people) => ({
+    ageTierTarget: 'YOUTH',
+    genderTarget: 'MALE',
+    lifeStageTarget: null,
+    leader: { name: 'Sam' },
+    assistant: null,
+    size: people.length,
+    participants: people.map((name) => ({ name, age: 18 })),
+  });
+  currentAssignment = assignment(1);
+  currentAssignment.result = {
+    ...currentAssignment.result,
+    totalGroups: 1,
+    totalAssignedParticipants: 1,
+    groups: [group(['Before refresh'])],
+  };
+  const printed = [];
+  const print = vi.spyOn(window, 'print').mockImplementation(() => {
+    printed.push(document.querySelector('#assignment').textContent);
+  });
+  try {
+    render(<GroupDisplay eventId={event.id} />);
+    await screen.findByText('Before refresh (18)');
+    currentEvent = { ...event, revision: 2 };
+    currentAssignment = assignment(2);
+    currentAssignment.result = {
+      ...currentAssignment.result,
+      totalGroups: 1,
+      totalAssignedParticipants: 2,
+      groups: [group(['After refresh', 'New walk-in'])],
+    };
+    fireEvent.click(screen.getByRole('button', { name: 'Print roster' }));
+    await waitFor(() => expect(print).toHaveBeenCalledOnce());
+    expect(printed[0]).toContain('New walk-in');
+    expect(printed[0]).toContain('2 assigned participants');
+    expect(printed[0]).not.toContain('Before refresh');
+  } finally {
+    print.mockRestore();
+  }
+});
