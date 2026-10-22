@@ -1,31 +1,39 @@
 package org.c3cavite.core.service;
 
-import org.c3cavite.core.domain.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.c3cavite.core.domain.AgeTier;
+import org.c3cavite.core.domain.Gender;
+import org.c3cavite.core.domain.GenderMode;
+import org.c3cavite.core.domain.LifeStage;
+import org.c3cavite.core.domain.Participant;
+import org.c3cavite.core.domain.SessionConfig;
 
 public class SegmentationStrategy {
 
-    public Map<SegmentKey, List<Participant>> segment(List<Participant> participants, SessionConfig config) {
-        Map<SegmentKey, List<Participant>> segments = new HashMap<>();
+  public Map<SegmentKey, List<Participant>> segment(
+      List<Participant> participants, SessionConfig config) {
+    Map<SegmentKey, List<Participant>> segments = new HashMap<>();
 
-        for (Participant p : participants) {
-            AgeTier segmentTier = p.getAgeTier(config);
-            if (segmentTier == null || !config.getActiveTiers().contains(segmentTier)) {
-                continue;
-            }
+    for (Participant p : participants) {
+      AgeTier segmentTier = p.getAgeTier(config);
+      if (segmentTier == null || !config.getActiveTiers().contains(segmentTier)) {
+        continue;
+      }
 
-            Gender segmentGender = (config.getGenderMode() == GenderMode.SEPARATED) ? p.getGender() : null;
-            LifeStage segmentLifeStage = (config.isLifeStageSubgroupingEnabled() && segmentTier == AgeTier.YOUNG_ADULT) 
-                    ? p.getLifeStage() : null;
+      Gender segmentGender =
+          (config.getGenderMode() == GenderMode.SEPARATED) ? p.getGender() : null;
+      LifeStage segmentLifeStage =
+          (config.isLifeStageSubgroupingEnabled() && segmentTier == AgeTier.YOUNG_ADULT)
+              ? p.getLifeStage()
+              : null;
 
-            SegmentKey key = new SegmentKey(segmentGender, segmentTier, segmentLifeStage);
-            segments.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
-        }
-
-        return segments;
+      SegmentKey key = new SegmentKey(segmentGender, segmentTier, segmentLifeStage);
+      segments.computeIfAbsent(key, k -> new ArrayList<>()).add(p);
     }
+
+    return segments;
+  }
 }
