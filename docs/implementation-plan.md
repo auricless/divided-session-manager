@@ -131,6 +131,8 @@ After integrating the reviewed 114-test core and Java quality configuration, the
 
 Sonar reported dependency risks during bootstrap CI. A public OSV query matched ten advisories across Jackson Core/Databind 3.1.5 and Tomcat Embed Core 11.0.24. The service overrides those BOM versions with compatible Jackson 3.1.8 and Tomcat 11.0.27 patches; Jackson modules stay aligned through their BOM, and the three embedded Tomcat artifacts share one version. Dependency recheck, startup verification and fresh native review are required after this security fix.
 
+The remaining Sonar risk was identified as Logback CVE-2026-104721. Five security regression inputs failed before upgrading Logback Classic/Core to 1.6.5 and aligning SLF4J to 2.0.19; the full bootstrap quality build now passes 122 tests. Official Sonar CLI 1.10.0 is installed and authenticated through its OS keychain, and authenticated risk readback was verified. Current-head Java 17 CI, Sonar risk clearance and native review remain merge gates.
+
 ## Phase 1B assignment API: SM-21
 
 The [API contract](assignment-api.md) records the acceptance criteria and runnable sample. Separate request/response DTOs and a mapper keep HTTP concerns outside the core; the controller delegates assignment decisions. Exceptions select an exact roster instance through a zero-based request index.
@@ -140,6 +142,8 @@ TDD: all 25 initial HTTP cases failed with 404 before the endpoint existed. Afte
 A CLI smoke run using `mvn spring-boot:run` on port 8080 and the documented curl sample returned FINAL with one staffed group and two participants. A missing-cap request returned HTTP 400 with a capSize message and no stack trace. This implementation remains pending Java 17 CI, Java quality checks, SonarQube and native Codex review.
 
 The integrated API branch passes 150 tests plus Google Java Format, Checkstyle, SpotBugs and coverage. One HTTP characterization verifies FAC-05 empty qualifications: strict proposal, explicit exception final, then proposal again after withdrawal. Two DTO snapshot regressions failed before defensive copies were added; the accompanying null-input compatibility test stays green, and existing malformed-input HTTP tests still return 400. No SpotBugs detector exclusions were added for the transport records. Current service coverage is 138/139 lines and 30/32 branches; algorithm thresholds continue to pass. The packaged JAR sample and missing-cap request were rechecked through real HTTP after the fix.
+
+After all dependency patches, full API quality verification passes 157 tests, including the seven logging security cases. Authenticated Sonar CLI readback confirms zero remaining PR #11 dependency risks.
 
 ## Phase 1B containers: SM-22 / SM-23
 
