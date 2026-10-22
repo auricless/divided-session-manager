@@ -1,6 +1,7 @@
 name: Container checks
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
@@ -20,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: container-checks-${{ github.event.pull_request.number }}
+  group: container-checks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,12 +36,12 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Require the proposed merge commit
+      - name: Require the requested revision
         env:
           PR_MERGE_SHA: ${{ github.sha }}
         run: |
           if [ "$(git rev-parse HEAD)" != "$PR_MERGE_SHA" ]; then
-            echo '::error::Container verification must test the proposed merge with the base branch.'
+            echo '::error::Container verification must test the requested revision.'
             exit 1
           fi
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -70,7 +71,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: browser-stack-failure-${{ github.event.pull_request.number }}-${{ github.sha }}
+          name: browser-stack-failure-${{ github.event.pull_request.number || github.run_id }}-${{ github.sha }}
           path: frontend/test-results/
           if-no-files-found: ignore
           retention-days: 7
