@@ -189,6 +189,23 @@ class ParticipantWorkflowTest {
     }
   }
 
+  @Test
+  void renamingAnEventPreservesTheStillValidAssignment() throws Exception {
+    String event = createEvent();
+    try {
+      var computed = body(request("POST", event + "/assignment", "{\"facilitators\":[]}"));
+      assertEquals(
+          200,
+          request("PUT", event, "{\"name\":\"Renamed\",\"config\":{\"capSize\":6}}").statusCode());
+      var latest = request("GET", event + "/assignment", null);
+      assertEquals(200, latest.statusCode(), latest.body());
+      assertEquals(computed.path("result"), body(latest).path("result"));
+      assertTrue(body(latest).path("revision").asLong() > computed.path("revision").asLong());
+    } finally {
+      request("DELETE", event, null);
+    }
+  }
+
   private String createEvent() throws Exception {
     var response =
         request("POST", "/api/v1/events", "{\"name\":\"Workflow\",\"config\":{\"capSize\":6}}");

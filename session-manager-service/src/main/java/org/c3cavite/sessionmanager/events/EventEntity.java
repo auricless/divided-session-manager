@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity(name = "SessionEvent")
@@ -35,8 +36,10 @@ class EventEntity {
 
   void update(String name, String configJson) {
     this.name = name;
-    this.configJson = configJson;
-    this.latestAssignmentJson = null;
+    if (!Objects.equals(this.configJson, configJson)) {
+      this.configJson = configJson;
+      this.latestAssignmentJson = null;
+    }
   }
 
   void rosterChanged() {
