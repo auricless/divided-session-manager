@@ -38,7 +38,7 @@ SessionConfig custom = SessionConfig.builder()
         .build();
 ```
 
-`SessionConfig.create(...)` remains available for explicit settings. Configuration copies its collections so later caller changes cannot alter a built session. `Participant.getAgeTier(config)` resolves the tier for an event. Newly constructed input participants and `AgeTier.fromAge(...)` use the default bands. Assignment results contain immutable participant copies whose no-argument `getAgeTier()` exposes the session's derived tier, including no tier for an attendee outside the configured ranges. Original inputs remain unchanged and reusable across sessions. Segmentation and assignment always use the event's configuration. Participant values reject blank names, nonpositive ages, and missing gender; session-derived Young Adults require a life stage. Facilitators validate name, role, gender, and a nonempty qualification list. Groups validate facilitator roles and expose participant-only size. Participant equality includes name, age, gender, and life stage.
+`SessionConfig.create(...)` remains available for explicit settings. Configuration copies its collections so later caller changes cannot alter a built session. `Participant.getAgeTier(config)` resolves the tier for an event. Newly constructed input participants and `AgeTier.fromAge(...)` use the default bands. Assignment results contain immutable participant copies whose no-argument `getAgeTier()` exposes the session's derived tier, including no tier for an attendee outside the configured ranges. Original inputs remain unchanged and reusable across sessions. Segmentation and assignment always use the event's configuration. Participant values reject blank names, nonpositive ages, and missing gender; session-derived Young Adults require a life stage. Facilitators validate name, role, gender, and a non-null qualification list without null elements. An empty list is valid, but the facilitator remains ineligible unless an explicit age-tier exception is supplied. Groups validate facilitator roles and expose participant-only size. Participant equality includes name, age, gender, and life stage.
 
 ## Current assignment behavior
 
@@ -67,7 +67,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 | --- | --- |
 | Configurable age-tier boundaries (CFG-04/06, PRT-02, NFR 5.3) | Implemented per session, including validation and assignment integration; defaults remain in `AgeTier`. |
 | No one-person group when a segment has multiple groups (ALG-08) | Sizing avoids singletons where feasible; unavoidable conflicts produce a proposal with blockers. |
-| At least 80% core algorithm test coverage (NFR 5.3) | JaCoCo measures 100% line coverage and 99.28% branch coverage in the service package with 112 passing tests. Maven verify checks the package against the 80% line / 70% branch targets. |
+| At least 80% core algorithm test coverage (NFR 5.3) | JaCoCo measures 100% line coverage and 99.28% branch coverage in the service package with 114 passing tests. Maven verify checks the package against the 80% line / 70% branch targets. |
 | Review and overrides | Explicit facilitator qualification/gender exceptions are supported through a run-scoped overload. Further participant-level editing remains outside the first release. |
 
 ## Project plan
@@ -84,6 +84,8 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 - Which later platform features are essential for the first real event, and what attendee data must be retained?
 
 ## Development
+
+PRs use [subscription-backed Codex review](docs/automated-pr-review.md) alongside Maven verification in GitHub Actions. Enable the repository connection and automatic review in Codex account settings. Local work follows TDD; fixes are pushed for a fresh native review. The SRS remains the ultimate design authority, with a [versioned requirements snapshot](docs/srs-core-requirements.md) available to the reviewer.
 
 This is a Java 17 multi-module Maven project. Maven 3.6.3+ is required.
 
@@ -108,3 +110,5 @@ Alternatively, after packaging, run `java -jar session-manager-service/target/se
 Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 
 `mvn verify` generates `session-manager-core/target/site/jacoco/index.html` and `jacoco.xml`. The report includes domain classes, while coverage requirements apply only to `org.c3cavite.core.service`. A deliberately stricter 100% branch probe was verified to fail, confirming that the package filter enforces the rule. The one uncovered branch is the null-gender guard for a manually constructed group in SEPARATED mode; the validated assignment entry point does not create that combination.
+
+The PR workflow enforces the same JaCoCo thresholds through Maven verify and uploads the HTML/XML report as a `jacoco-pr-*` Actions artifact for 14 days. Reports are retained when a coverage check fails after report generation. A successful build without its expected coverage report fails artifact publication.
