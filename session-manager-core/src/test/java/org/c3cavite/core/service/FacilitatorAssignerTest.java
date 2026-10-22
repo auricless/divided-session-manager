@@ -106,7 +106,7 @@ class FacilitatorAssignerTest {
     @Test
     void exceptionDoesNotPromoteAssistantToLeader() {
         Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
-        Facilitator assistant = new Facilitator("Assistant", Role.ASSISTANT, Gender.FEMALE, List.of());
+        Facilitator assistant = new Facilitator("Assistant", Role.ASSISTANT, Gender.FEMALE, List.of(AgeTier.YOUNG_ADULT));
 
         assigner.assign(List.of(group), List.of(assistant), SessionConfig.builder().capSize(6).build(),
                 List.of(new FacilitatorException(assistant, true, true)));

@@ -93,13 +93,14 @@ class AssignmentResultTest {
     }
 
     @Test
-    void anAssistantInTheLeaderSlotDoesNotFinalizeAGroup() {
+    void aRejectedAssistantDoesNotReplaceTheExistingLeader() {
         Group group = staffedGroup();
-        group.assignLeader(new Facilitator("Assistant", Role.ASSISTANT, Gender.MALE, List.of(AgeTier.YOUTH)));
+        assertThrows(IllegalArgumentException.class, () -> group.assignLeader(
+                new Facilitator("Assistant", Role.ASSISTANT, Gender.MALE, List.of(AgeTier.YOUTH))));
         AssignmentResult result = new AssignmentResult(List.of(group), List.of(), List.of());
 
-        assertFalse(result.isFinal());
-        assertEquals(AssignmentBlocker.Code.INVALID_LEADER_ROLE, result.getBlockers().get(0).getCode());
+        assertTrue(result.isFinal());
+        assertEquals(leader, result.getGroups().get(0).getLeader());
     }
 
     @Test
