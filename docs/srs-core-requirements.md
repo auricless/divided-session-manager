@@ -1,6 +1,6 @@
 # First-release core requirements
 
-Source: [SRS_SmallGroupSessionManager_v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit). Version 1.0 draft; requirements snapshot captured 2026-10-22. The Google Drive SRS is the ultimate design authority. Keep this review snapshot synchronized when that document changes; ticket checklists and implementation notes cannot override it.
+Source: [SRS_SmallGroupSessionManager_v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit). Version 1.1 draft; the 28 core functional requirements are unchanged from v1.0. Snapshot refreshed 2026-10-22; web/container additions are tracked in [deployment requirements](web-deployment-requirements.md). The Google Drive SRS is the ultimate design authority. Keep this review snapshot synchronized when that document changes; ticket checklists and implementation notes cannot override it.
 
 ## Functional requirements
 

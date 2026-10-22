@@ -1,6 +1,6 @@
 # Session Manager engineering guidance
 
-The [SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit) is the ultimate design authority. Read [the versioned requirements snapshot](docs/srs-core-requirements.md) when reviewing changes. Conflicting ticket checklists or implementation notes cannot override the SRS. Refresh the snapshot when the source changes.
+The [SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit) is the ultimate design authority. Read [the versioned requirements snapshot](docs/srs-core-requirements.md) when reviewing core changes, and [React/container requirements](docs/web-deployment-requirements.md) for the current web scope. Conflicting ticket checklists or implementation notes cannot override the SRS. Refresh the snapshot when the source changes.
 
 Inspect source, diffs, tests, and builds locally through CLI. Implement changed behavior through failing tests, then the smallest maintainable fix, then passing verification. Commit and push through Git CLI. Use the authenticated `sonar` CLI, including `sonar api`, for SonarQube lookups; keep tokens in its supported keychain and never request or expose them in chat. Use conventional branch types and Conventional Commits, without a `codex` prefix. PR descriptions start with Notion ticket links, then `## What` and `## Why`.
 
@@ -33,3 +33,5 @@ Review the current PR diff and relevant surrounding code with a reviewer mindset
 Codex's subscription-backed GitHub integration performs PR review. GitHub Actions runs Maven verification without an OpenAI API key. If the reviewer finds an issue, reproduce it with a failing test, fix it, verify, and push. PR opening already triggers native review: do not post a duplicate request. For an updated head, inspect native activity first and request one fresh `@codex review` only when that head has no automatic review queued, running, or completed. Keep PRs sequential. Merge only after current-head tests pass and current-head review is complete with no unresolved actionable findings; a green Maven check alone is insufficient. Follow the user's current merge authorization.
 
 Native GitHub review has its own reporting thresholds and usage limits. These rules set review priorities; they do not guarantee exhaustive coverage or change the subscription's reporting limits. See [review setup and limitations](docs/automated-pr-review.md).
+
+React is the required UI under SRS v1.1 section 9. Keep its source, npm build/tests and production image independent from the Spring Boot API; do not bundle UI assets or Thymeleaf into the API. Docker Compose must orchestrate UI/API/PostgreSQL with the networking, health, persistence and verification requirements in the SRS.
