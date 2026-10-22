@@ -47,6 +47,8 @@ The pinned Maven scanner runs `verify` and analysis in one invocation, reads eac
 - [x] Checkstyle rejected 23 existing import/braces violations; those were corrected.
 - [x] SpotBugs rejected a temporary definite null dereference (`NP_ALWAYS_NULL`); the probe was removed.
 - [x] Restored source passes formatting, style, bug checks, all 114 tests, and coverage.
-- [ ] Java 17 CI and Java 21 quality CI pass for the PR head.
+- [x] Initial PR head passed Java 17 CI and Java 21 quality CI; subsequent heads must pass again.
 - [ ] Sonar account configuration and live analysis verified.
 - [ ] Native Codex review of the final PR head completed without unresolved findings.
+
+The initial live scan failed because the scanner also reads the `SONAR_REGION` environment variable and rejects the value `eu`. The workflow now reads the repository variable into `SONAR_ACCOUNT_REGION`; EU leaves the scanner setting unset, while US passes `-Dsonar.region=us`. Final live verification remains required.

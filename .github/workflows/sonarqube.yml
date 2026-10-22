@@ -31,7 +31,7 @@ jobs:
     env:
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
       SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
-      SONAR_REGION: ${{ vars.SONAR_REGION }}
+      SONAR_ACCOUNT_REGION: ${{ vars.SONAR_REGION }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -52,7 +52,7 @@ jobs:
             exit 1
           fi
           region_args=()
-          case "$SONAR_REGION" in
+          case "$SONAR_ACCOUNT_REGION" in
             ''|eu) ;;
             us) region_args+=(-Dsonar.region=us) ;;
             *) echo '::error::SONAR_REGION must be eu or us.'; exit 1 ;;
