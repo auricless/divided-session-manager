@@ -6,12 +6,12 @@ The required topology is browser -> UI static server/reverse proxy -> Spring Boo
 
 | Work | Requirement coverage | Notion task | State |
 | --- | --- | --- | --- |
-| React event/config/participant/facilitator workflow | WEB-01/02, VER-01/03 | [SM-36](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) | Migrating the unmerged PR #17; old Thymeleaf evidence is historical |
-| React live/proposal/print/export and lifecycle safety | WEB-03/04, VER-01/03 | [SM-37](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) | Migrating PR #17; preserve revision/navigation regressions |
-| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | To Do |
-| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | To Do |
-| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | To Do |
-| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | To Do |
+| React event/config/participant/facilitator workflow | WEB-01/02, VER-01/03 | [SM-36](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) | React implemented in PR #17; current-head CI passes, native review pending |
+| React live/proposal/print/export and lifecycle safety | WEB-03/04, VER-01/03 | [SM-37](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) | 22 frontend tests pass; current-head native review pending |
+| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | Implemented locally; actual-stack CI/native review pending |
+| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | Implemented locally; actual-stack CI/native review pending |
+| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | Implemented locally; actual-stack CI/native review pending |
+| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | Implemented locally; actual-stack CI/native review pending |
 
 ## Delivery order and acceptance
 

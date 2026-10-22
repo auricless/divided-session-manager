@@ -43,3 +43,8 @@ build/
 # React build
 node_modules/
 /frontend/dist/
+
+# Browser acceptance artifacts
+/frontend/test-results/
+/frontend/playwright-report/
+**/__pycache__/
