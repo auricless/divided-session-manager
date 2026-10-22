@@ -283,6 +283,24 @@ class GroupAssignmentServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.assign(config, List.of(), List.of(), null));
         assertThrows(IllegalArgumentException.class, () -> service.assign(config,
                 java.util.Arrays.asList((Participant) null), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> service.assign(config,
+                List.of(), java.util.Arrays.asList((Facilitator) null)));
+    }
+
+    @Test
+    void staffedSegmentsStayNearTargetWhenConsolidationCannotHelpAnotherTier() {
+        List<Participant> participants = new java.util.ArrayList<>(attendees(4, 17, null));
+        participants.addAll(attendees(8, 14, null));
+
+        AssignmentResult result = service.assign(SessionConfig.builder().capSize(8).build(),
+                participants, leaders(2, AgeTier.TEENS));
+
+        assertFalse(result.isFinal());
+        assertEquals(12, result.getTotalAssignedParticipants());
+        List<Group> teens = result.getGroups().stream().filter(g -> g.getAgeTierTarget() == AgeTier.TEENS).toList();
+        assertEquals(2, teens.size());
+        assertTrue(teens.stream().allMatch(g -> g.getSize() == 4 && g.getLeader() != null));
+        assertNull(result.getGroups().get(0).getLeader());
     }
 
     @Test

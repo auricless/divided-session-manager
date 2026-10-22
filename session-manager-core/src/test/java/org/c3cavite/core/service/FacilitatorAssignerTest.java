@@ -151,6 +151,22 @@ class FacilitatorAssignerTest {
                 List.of(exception)));
         assertThrows(IllegalArgumentException.class, () -> assigner.assign(List.of(), List.of(leader), config,
                 List.of(exception, exception)));
+        assertThrows(IllegalArgumentException.class, () -> assigner.assign(List.of(), List.of(leader), config,
+                java.util.Arrays.asList((FacilitatorException) null)));
+    }
+
+    @Test
+    void qualificationOnlyExceptionKeepsGenderRequiredAndDescribesTheActualWaiver() {
+        Group group = new Group(Gender.MALE, AgeTier.TEENS, null);
+        Facilitator leader = new Facilitator("Leader", Role.LEADER, Gender.MALE, List.of(AgeTier.YOUTH));
+
+        List<String> warnings = assigner.assign(List.of(group), List.of(leader),
+                SessionConfig.builder().capSize(6).build(), List.of(new FacilitatorException(leader, true, false)));
+
+        assertEquals(leader, group.getLeader());
+        assertEquals(1, warnings.size());
+        assertTrue(warnings.get(0).contains("age-tier qualification"));
+        assertFalse(warnings.get(0).contains("gender"));
     }
 
     @Test

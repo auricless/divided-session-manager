@@ -88,4 +88,45 @@ class SegmentationStrategyTest {
         assertTrue(result.containsKey(new SegmentKey(null, AgeTier.YOUNG_ADULT, LifeStage.STUDENT)));
         assertTrue(result.containsKey(new SegmentKey(null, AgeTier.YOUNG_ADULT, LifeStage.WORKING_PROFESSIONAL)));
     }
+
+    @Test
+    void emptyInputProducesNoSegments() {
+        assertTrue(strategy.segment(List.of(), SessionConfig.builder().capSize(6).build()).isEmpty());
+    }
+
+    @Test
+    void oneAttendeeRemainsInOneSegment() {
+        Participant attendee = new Participant("Attendee", 14, Gender.FEMALE, null);
+        Map<SegmentKey, List<Participant>> result = strategy.segment(List.of(attendee),
+                SessionConfig.builder().capSize(6).build());
+
+        assertEquals(Map.of(new SegmentKey(Gender.FEMALE, AgeTier.TEENS, null), List.of(attendee)), result);
+    }
+
+    @Test
+    void allThreeAgeTiersStaySeparate() {
+        Participant teen = new Participant("Teen", 14, Gender.MALE, null);
+        Participant youth = new Participant("Youth", 17, Gender.MALE, null);
+        Participant adult = new Participant("Adult", 25, Gender.MALE, LifeStage.STUDENT);
+        Map<SegmentKey, List<Participant>> result = strategy.segment(List.of(teen, youth, adult),
+                SessionConfig.builder().capSize(6).build());
+
+        assertEquals(Map.of(new SegmentKey(Gender.MALE, AgeTier.TEENS, null), List.of(teen),
+                new SegmentKey(Gender.MALE, AgeTier.YOUTH, null), List.of(youth),
+                new SegmentKey(Gender.MALE, AgeTier.YOUNG_ADULT, LifeStage.STUDENT), List.of(adult)), result);
+    }
+
+    @Test
+    void unknownAndInactiveTiersAreExcludedFromSegmentation() {
+        SessionConfig config = SessionConfig.builder().capSize(6).activeTiers(List.of(AgeTier.YOUTH))
+                .ageTierBoundaries(Map.of(AgeTier.TEENS, new AgeRange(13, 15),
+                        AgeTier.YOUTH, new AgeRange(16, 22), AgeTier.YOUNG_ADULT, new AgeRange(23, 30))).build();
+        Participant eligible = new Participant("Youth", 17, Gender.MALE, null);
+        List<Participant> input = List.of(eligible, new Participant("Child", 12, Gender.MALE, null),
+                new Participant("Inactive", 14, Gender.MALE, null),
+                new Participant("Outside", 31, Gender.MALE, LifeStage.STUDENT));
+
+        assertEquals(Map.of(new SegmentKey(Gender.MALE, AgeTier.YOUTH, null), List.of(eligible)),
+                strategy.segment(input, config));
+    }
 }

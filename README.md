@@ -8,7 +8,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 | Area | State |
 | --- | --- |
-| `session-manager-core` | Implemented: domain objects, segmentation, group sizing, facilitator assignment, result and warnings, with JUnit tests. Phase 1A needs review against the intended rules and coverage target. |
+| `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Automated review and merge gates remain before Phase 1A is complete. |
 | `session-manager-service` | Placeholder Maven module only. No Spring Boot application or REST endpoint yet. |
 | Docker and Compose | Not implemented. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
@@ -67,12 +67,12 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 | --- | --- |
 | Configurable age-tier boundaries (CFG-04/06, PRT-02, NFR 5.3) | Implemented per session, including validation and assignment integration; defaults remain in `AgeTier`. |
 | No one-person group when a segment has multiple groups (ALG-08) | Sizing avoids singletons where feasible; unavoidable conflicts produce a proposal with blockers. |
-| At least 80% core algorithm test coverage (NFR 5.3) | Tests exist; coverage has not been measured here. |
+| At least 80% core algorithm test coverage (NFR 5.3) | JaCoCo measures 100% line coverage and 99.28% branch coverage in the service package with 114 passing tests. Maven verify checks the package against the 80% line / 70% branch targets. |
 | Review and overrides | Explicit facilitator qualification/gender exceptions are supported through a run-scoped overload. Further participant-level editing remains outside the first release. |
 
 ## Project plan
 
-- **Phase 1A — core library:** Implementation exists. Align shortage handling and configurable defaults with the intended workflow; measure the tracker’s 80% core algorithm coverage goal before marking the milestone complete.
+- **Phase 1A — core library:** Behavior and coverage checks are implemented locally. Finish automated PR review and merge the remaining changes before marking the milestone complete.
 - **Phase 1B — service wrapper (planned, outside first release):** Add the Spring Boot module, `POST /api/v1/sessions/assign`, service tests, and runnable container setup after the core contract is stable.
 - **Later event platform:** The current proposal includes registration, an organizer review screen, persistence, group displays, and printable rosters. These are outside the first algorithm deliverable.
 
@@ -92,6 +92,11 @@ This is a Java 17 multi-module Maven project. Maven 3.6+ is required.
 ```bash
 mvn test
 mvn package
+mvn verify
 ```
 
 Run these commands from the repository root. They currently build and test the core plus the placeholder service module. The core entry point is `org.c3cavite.core.service.GroupAssignmentService`; there is no application command or HTTP endpoint yet.
+
+`mvn verify` generates `session-manager-core/target/site/jacoco/index.html` and `jacoco.xml`. The report includes domain classes, while coverage requirements apply only to `org.c3cavite.core.service`. A deliberately stricter 100% branch probe was verified to fail, confirming that the package filter enforces the rule. The one uncovered branch is the null-gender guard for a manually constructed group in SEPARATED mode; the validated assignment entry point does not create that combination.
+
+The PR workflow enforces the same JaCoCo thresholds through Maven verify and uploads the HTML/XML report as a `jacoco-pr-*` Actions artifact for 14 days. Reports are retained when a coverage check fails after report generation. A successful build without its expected coverage report fails artifact publication.
