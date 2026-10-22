@@ -2,7 +2,7 @@
 
 The [SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit) is the ultimate design authority. Read [the versioned requirements snapshot](docs/srs-core-requirements.md) when reviewing changes. Conflicting ticket checklists or implementation notes cannot override the SRS. Refresh the snapshot when the source changes.
 
-Inspect source, diffs, tests, and builds locally through CLI. Implement changed behavior through failing tests, then the smallest maintainable fix, then passing verification. Commit and push through Git CLI. Use conventional branch types and Conventional Commits, without a `codex` prefix. PR descriptions start with Notion ticket links, then `## What` and `## Why`.
+Inspect source, diffs, tests, and builds locally through CLI. Implement changed behavior through failing tests, then the smallest maintainable fix, then passing verification. Commit and push through Git CLI. Use the authenticated `sonar` CLI, including `sonar api`, for SonarQube lookups; keep tokens in its supported keychain and never request or expose them in chat. Use conventional branch types and Conventional Commits, without a `codex` prefix. PR descriptions start with Notion ticket links, then `## What` and `## Why`.
 
 ## Code Review Rules
 
