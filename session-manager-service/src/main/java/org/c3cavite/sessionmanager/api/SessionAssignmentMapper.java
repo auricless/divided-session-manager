@@ -1,10 +1,6 @@
 package org.c3cavite.sessionmanager.api;
 
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
-import org.c3cavite.core.domain.AgeRange;
-import org.c3cavite.core.domain.AgeTier;
 import org.c3cavite.core.domain.AssignmentResult;
 import org.c3cavite.core.domain.Facilitator;
 import org.c3cavite.core.domain.FacilitatorException;
@@ -15,9 +11,15 @@ import org.springframework.stereotype.Component;
 
 @Component
 class SessionAssignmentMapper {
+  private final SessionConfigMapper configMapper;
+
+  SessionAssignmentMapper(SessionConfigMapper configMapper) {
+    this.configMapper = configMapper;
+  }
+
   AssignmentInput toDomain(AssignmentRequest request) {
     required(request, "request");
-    SessionConfig config = config(required(request.config(), "config"));
+    SessionConfig config = configMapper.toDomain(request.config());
     List<Participant> participants =
         required(request.participants(), "participants").stream().map(this::participant).toList();
     List<Facilitator> facilitators =
@@ -29,37 +31,6 @@ class SessionAssignmentMapper {
                 .map(input -> exception(input, facilitators))
                 .toList();
     return new AssignmentInput(config, participants, facilitators, exceptions);
-  }
-
-  private SessionConfig config(AssignmentRequest.Config input) {
-    SessionConfig.Builder builder = SessionConfig.builder().capSize(input.capSize());
-    if (input.targetSize() != null) {
-      builder.targetSize(input.targetSize());
-    }
-    if (input.genderMode() != null) {
-      builder.genderMode(input.genderMode());
-    }
-    if (input.activeTiers() != null) {
-      builder.activeTiers(input.activeTiers());
-    }
-    if (input.lifeStageSubgroupingEnabled() != null) {
-      builder.lifeStageSubgroupingEnabled(input.lifeStageSubgroupingEnabled());
-    }
-    if (input.ageTierBoundaries() != null) {
-      Map<AgeTier, AgeRange> boundaries = new EnumMap<>(AgeTier.class);
-      input
-          .ageTierBoundaries()
-          .forEach(
-              (tier, range) -> {
-                required(range, "ageTierBoundaries range");
-                boundaries.put(
-                    tier,
-                    new AgeRange(
-                        required(range.minAge(), "minAge"), required(range.maxAge(), "maxAge")));
-              });
-      builder.ageTierBoundaries(boundaries);
-    }
-    return builder.build();
   }
 
   private Participant participant(AssignmentRequest.ParticipantInput input) {

@@ -17,6 +17,18 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_DB: session_manager
+          POSTGRES_USER: session_manager
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U session_manager -d session_manager"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -34,7 +46,10 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Verify Maven reactor
+      - name: Verify Maven reactor on PostgreSQL
+        env:
+          TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/session_manager
+          TEST_DATABASE_PASSWORD: ci-only-password
         run: mvn --batch-mode --no-transfer-progress verify
       - name: Publish JaCoCo coverage report
         if: ${{ !cancelled() && (success() || hashFiles('**/target/site/jacoco/jacoco.xml') != '') }}

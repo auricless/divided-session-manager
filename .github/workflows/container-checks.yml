@@ -26,6 +26,8 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: ci-only-password
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -61,4 +63,4 @@ jobs:
         run: docker compose -p session-manager-ci logs
       - name: Stop the test stack
         if: ${{ always() }}
-        run: docker compose -p session-manager-ci down
+        run: docker compose -p session-manager-ci down --volumes

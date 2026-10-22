@@ -11,7 +11,8 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
 | Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
-| Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
+| PostgreSQL and event CRUD | Flyway/JPA event persistence and REST CRUD implemented; real database CI and native review are required before delivery. |
+| Registration UI, participant CRUD, printable rosters | Remaining Phase 2 work, tracked in the SRS acceptance audit. |
 
 ## What the core accepts and returns
 
@@ -19,7 +20,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 
 Results are immutable snapshots, including their groups and facilitator qualifications. `getState()` returns `FINAL` when every formed group has a LEADER and respects the supplied event cap and minimum-size rule; otherwise it returns `NON_FINAL_PROPOSAL`. An empty assignment is final. `getBlockers()` identifies affected groups by their one-based position in `getGroups()`, with a code and an action for the organizer. Excluded attendees remain in the unassigned list and do not block a staffed assignment. Mutable `Group` objects can still be used during assignment construction; mutation methods on groups returned in a result throw `UnsupportedOperationException`.
 
-Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. There is no stored event, registration process, or user interface.
+Configuration defaults to `SEPARATED` gender mode, target size 4, all age tiers active, and Young Adult life-stage splitting enabled. The organizer must explicitly supply a positive cap for every session. The event API stores named configurations; participant registration and screens remain separate Phase 2 work.
 
 Default age tiers are Teens (13–15), Youth (16–22), and Young Adults (23+). Per-session inclusive ranges can override these boundaries. All three ranges must be present, ordered, and contiguous, with no overlaps. Ranges start at 13 or above; attendees outside the configured interval or in an inactive tier are returned as unassigned. For Young Adults, the life-stage values are `STUDENT` and `WORKING_PROFESSIONAL`.
 
@@ -99,6 +100,8 @@ Run these commands from the repository root. They build and test the standalone 
 
 To start the wrapper on port 8080, first install the reactor artifacts, then run from the service module:
 
+Start PostgreSQL and export `DATABASE_PASSWORD` as described in [database setup](docs/event-api.md) before running the service.
+
 ```bash
 mvn install
 cd session-manager-service
@@ -107,9 +110,9 @@ mvn spring-boot:run
 
 Alternatively, after packaging, run `java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar` from the repository root. Stop the process with Ctrl+C.
 
-POST the [sample request](session-manager-service/examples/assign-request.json) to `/api/v1/sessions/assign`; see the [API contract and curl instructions](docs/assignment-api.md). Successful computations return final assignments or proposals with blockers. Invalid input returns HTTP 400 with a clean message. The service stores no event or attendee data.
+POST the [sample request](session-manager-service/examples/assign-request.json) to `/api/v1/sessions/assign`; see the [API contract and curl instructions](docs/assignment-api.md). Successful computations return final assignments or proposals with blockers. Invalid input returns HTTP 400 with a clean message. The stateless assignment endpoint stores no request data. The separate event API persists event configuration in PostgreSQL; see [event API and database setup](docs/event-api.md).
 
-For the container setup, run `docker compose up --build` from the repository root and use the same sample on localhost:8080. See [container commands and verification status](docs/container-runtime.md).
+For the container setup, set `POSTGRES_PASSWORD`, then run `docker compose up --build` from the repository root and use the same sample on localhost:8080. See [container commands and verification status](docs/container-runtime.md).
 
 Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 

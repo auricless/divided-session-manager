@@ -32,6 +32,18 @@ jobs:
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
       SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
       SONAR_ACCOUNT_REGION: ${{ vars.SONAR_REGION }}
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_DB: session_manager
+          POSTGRES_USER: session_manager
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U session_manager -d session_manager"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -45,6 +57,8 @@ jobs:
       - name: Verify and analyze with JaCoCo coverage
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/session_manager
+          TEST_DATABASE_PASSWORD: ci-only-password
         shell: bash
         run: |
           if [ -z "$SONAR_TOKEN" ]; then

@@ -54,7 +54,7 @@ Core test classes below are in `session-manager-core/src/test/java/org/c3cavite/
 | SRS deliverable | Current evidence | Notion task |
 | --- | --- | --- |
 | Performance/reliability evidence and full traceability | Acceptance tests and this audit added; PR checks/review required | [Audit](https://app.notion.com/p/40161e61aca181b4aa8ff6ab5001c772) |
-| PostgreSQL schema, Spring Data JPA, event CRUD | Not implemented | [Persistence and events](https://app.notion.com/p/40161e61aca181ba8c4afb8636a15c26) |
+| PostgreSQL schema, Spring Data JPA, event CRUD | Implemented; EventApiTest and restart acceptance pass on real PostgreSQL; CI/review gate pending | [Persistence and events](https://app.notion.com/p/40161e61aca181ba8c4afb8636a15c26) |
 | Participant CRUD and event workflow integration | Not implemented | [Participants and assignment](https://app.notion.com/p/40161e61aca181e88ec4e6098cd6ad5c) |
 | React or Thymeleaf registration UI | Not implemented; choose Thymeleaf to reuse Java service and validation | [Registration UI](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) |
 | Real-time group display, print/export | Not implemented | [Display and export](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) |
