@@ -9,7 +9,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | Area | State |
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
-| `session-manager-service` | Runnable Spring Boot wrapper with a startup test. No assignment endpoint yet; automated review is pending. |
+| `session-manager-service` | Runnable Spring Boot wrapper and assignment API with real HTTP tests. Agent review and merge are pending. |
 | Docker and Compose | Not implemented. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
 
@@ -73,7 +73,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 ## Project plan
 
 - **Phase 1A — core library:** Core behavior, coverage checks, Java 17 CI, and native Codex review are complete and merged.
-- **Phase 1B — service wrapper (planned, outside first release):** Add the Spring Boot module, `POST /api/v1/sessions/assign`, service tests, and runnable container setup after the core contract is stable.
+- **Phase 1B — service wrapper (outside first release):** The Spring Boot module and `POST /api/v1/sessions/assign` are implemented locally with service tests. Finish review, merging, and runnable container verification.
 - **Later event platform:** The current proposal includes registration, an organizer review screen, persistence, group displays, and printable rosters. These are outside the first algorithm deliverable.
 
 ## Decisions to resolve
@@ -105,7 +105,9 @@ cd session-manager-service
 mvn spring-boot:run
 ```
 
-Alternatively, after packaging, run `java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar` from the repository root. No REST endpoint is implemented yet, so a request to `/` returns 404. Stop the process with Ctrl+C.
+Alternatively, after packaging, run `java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar` from the repository root. Stop the process with Ctrl+C.
+
+POST the [sample request](session-manager-service/examples/assign-request.json) to `/api/v1/sessions/assign`; see the [API contract and curl instructions](docs/assignment-api.md). Successful computations return final assignments or proposals with blockers. Invalid input returns HTTP 400 with a clean message. The service stores no event or attendee data.
 
 Spring Boot 4.1.1 is managed through a BOM imported only by the service module. The MVC starter is `spring-boot-starter-webmvc`, the current replacement for the older `spring-boot-starter-web` name in SM-20. The core has no Spring dependencies; check with `mvn dependency:tree -pl session-manager-core`.
 
