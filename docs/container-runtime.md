@@ -1,14 +1,15 @@
 # Local container runtime
 
-Scope: SM-22 and SM-23. Build both Maven modules, package the executable service, and run it in a non-root Java 17 JRE image. The local Compose stack has one service and no database.
+Scope: SM-22 and SM-23. Build both Maven modules, package the executable service, and run it in a non-root Java 17 JRE image. The Phase 2 Compose stack includes the service and a healthy PostgreSQL 17.11 database with durable storage.
 
 ## Build and run
 
-From the repository root:
+From the repository root, set `POSTGRES_PASSWORD` to a local secret and pass it as `DATABASE_PASSWORD` when starting a standalone service container. The service requires a reachable PostgreSQL instance; use Compose for the complete stack.
 
 ```bash
 docker build -f session-manager-service/Dockerfile -t session-manager-service:local .
-docker run --rm -p 127.0.0.1:8080:8080 session-manager-service:local
+docker run --rm -p 127.0.0.1:8080:8080 \
+  -e DATABASE_URL -e DATABASE_USER -e DATABASE_PASSWORD session-manager-service:local
 ```
 
 Or start Compose:
@@ -19,9 +20,9 @@ docker compose up --build
 
 The root build context is required: the service depends on the sibling core module and repository parent POM. The older ticket command using only the service directory as context cannot build this multi-module project from source. Compose uses the same root context with the Dockerfile in `session-manager-service`.
 
-Port 8080 is bound to localhost for development. Run the documented [API sample](assignment-api.md) from another terminal, or `sh scripts/smoke-assignment-api.sh`. The smoke script needs curl and Python 3 on the host; these tools are not added to the runtime image.
+Ports 8080 (HTTP) and 5432 (PostgreSQL) are bound to localhost for development. Run the documented [API sample](assignment-api.md) from another terminal, or `sh scripts/smoke-assignment-api.sh`. The smoke script needs curl and Python 3 on the host; these tools are not added to the runtime image.
 
-Stop Compose with Ctrl+C, then run `docker compose down` to remove the local stack. The service stores no state. `restart: unless-stopped` applies when the stack is left running in the background.
+Stop Compose with Ctrl+C, then run `docker compose down` to remove containers while retaining PostgreSQL data. `docker compose down --volumes` intentionally deletes local event data. The assignment endpoint remains stateless; event configuration is persistent. `restart: unless-stopped` applies when the stack is left running in the background.
 
 ## Acceptance and verification
 
