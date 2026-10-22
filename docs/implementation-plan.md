@@ -89,7 +89,7 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 - SM-31 / PR #7: subscription-backed native review and API-free Java 17 Maven CI passed review and merged. Automatic review on PR open is verified; do not post a duplicate manual review request for the same head.
 - SM-8 / SM-9 / SM-11: model validation and SRS-compliant empty-qualification exceptions passed review and merged in PR #8.
 - SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, passed Java 17 CI and native review and merged in PR #9.
-- SM-20–23: complete the later Spring Boot wrapper, assignment endpoint, Dockerfile, and local Compose setup as a separate milestone after the core implementation.
+- SM-20 / SM-21: Spring Boot wrapper and assignment API passed CI, Sonar and native review and merged in PRs #11 / #12. SM-22 / SM-23 container verification and review remain.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
 

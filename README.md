@@ -1,6 +1,6 @@
 # Divided Session Manager
 
-Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository currently contains its Java grouping engine, not a usable registration application.
+Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository contains its Java grouping engine and stateless assignment API. Registration screens are a later milestone.
 
 The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) is the ultimate source of truth for design; it takes precedence over conflicting ticket checklists. The first release is the core assignment library: it produces a final assignment when all required conditions are met and accepts explicit organizer overrides for recomputation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
 
@@ -9,7 +9,7 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | Area | State |
 | --- | --- |
 | `session-manager-core` | Domain objects, segmentation, sizing, facilitator assignment, immutable final/proposal results, explicit exceptions, and coverage checks are implemented. Phase 1A passed Java 17 CI and native Codex review and is merged. |
-| `session-manager-service` | Runnable Spring Boot wrapper and assignment API with real HTTP tests. Agent review and merge are pending. |
+| `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
 | Docker and Compose | Multi-stage JRE image, local stack, and CI smoke check are prepared. Docker build/runtime/size verification and review remain pending. |
 | Registration UI, persistence, printable rosters | Proposed for a later phase; not implemented. |
 
@@ -73,7 +73,7 @@ ALG-08 permits a one-person group only when it is the only group in its tier/gen
 ## Project plan
 
 - **Phase 1A — core library:** Core behavior, coverage checks, Java 17 CI, and native Codex review are complete and merged.
-- **Phase 1B — service wrapper (outside first release):** The Spring Boot module and `POST /api/v1/sessions/assign` are implemented locally with service tests. Finish review, merging, and runnable container verification.
+- **Phase 1B — service wrapper (outside first release):** The Spring Boot module and `POST /api/v1/sessions/assign` are implemented locally with service tests. The wrapper/API passed review and merged; container verification is the remaining gate.
 - **Later event platform:** The current proposal includes registration, an organizer review screen, persistence, group displays, and printable rosters. These are outside the first algorithm deliverable.
 
 ## Decisions to resolve

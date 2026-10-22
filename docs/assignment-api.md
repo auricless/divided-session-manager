@@ -60,4 +60,4 @@ Invalid requests return HTTP 400 and `{"message":"..."}`. Staffing shortages and
 
 Request and response records capture collection snapshots. Request copies preserve null values until boundary validation so malformed requests still receive clean HTTP 400 responses; response lists are unmodifiable.
 
-Automated PR review remains required before this implementation is merged.
+The API passed Java 17/21 CI, Sonar quality/dependency checks and native Codex review, and merged in PR #12.
