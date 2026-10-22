@@ -18,8 +18,14 @@ class FacilitatorTest {
         assertThrows(IllegalArgumentException.class, () -> new Facilitator("Leader", null, Gender.MALE, List.of(AgeTier.YOUTH)));
         assertThrows(IllegalArgumentException.class, () -> new Facilitator("Leader", Role.LEADER, null, List.of(AgeTier.YOUTH)));
         assertThrows(IllegalArgumentException.class, () -> new Facilitator("Leader", Role.LEADER, Gender.MALE, null));
-        assertThrows(IllegalArgumentException.class, () -> new Facilitator("Leader", Role.LEADER, Gender.MALE, List.of()));
         assertThrows(IllegalArgumentException.class, () -> new Facilitator("Leader", Role.LEADER, Gender.MALE, Arrays.asList((AgeTier) null)));
+    }
+
+    @Test
+    void emptyQualificationsAreAValidRosterValueForExplicitOrganizerOverrides() {
+        Facilitator facilitator = new Facilitator("Unqualified leader", Role.LEADER, Gender.MALE, List.of());
+        assertTrue(facilitator.getQualifiedTiers().isEmpty());
+        assertThrows(UnsupportedOperationException.class, () -> facilitator.getQualifiedTiers().add(AgeTier.YOUTH));
     }
 
     @Test
