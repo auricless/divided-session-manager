@@ -1,0 +1,64 @@
+name: Container checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'pom.xml'
+      - 'session-manager-core/**'
+      - 'session-manager-service/**'
+      - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'scripts/smoke-assignment-api.sh'
+      - 'scripts/test-smoke-assignment-api.py'
+      - '.github/workflows/container-checks.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  container:
+    name: Container build and HTTP smoke
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Require the proposed merge commit
+        env:
+          PR_MERGE_SHA: ${{ github.sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$PR_MERGE_SHA" ]; then
+            echo '::error::Container verification must test the proposed merge with the base branch.'
+            exit 1
+          fi
+      - name: Test smoke startup retries
+        run: python3 scripts/test-smoke-assignment-api.py
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Build and start the service
+        run: docker compose -p session-manager-ci up --build --detach
+      - name: Verify the runtime image
+        run: |
+          size=$(docker image inspect session-manager-service:local --format '{{.Size}}')
+          if [ "$size" -ge 300000000 ]; then
+            echo "::error::Runtime image size $size bytes exceeds the 300 MB target."
+            exit 1
+          fi
+          docker run --rm --entrypoint sh session-manager-service:local -c 'java -version; ! command -v javac'
+          user=$(docker image inspect session-manager-service:local --format '{{.Config.User}}')
+          test "$user" = '10001:10001'
+      - name: Exercise the assignment endpoint
+        run: sh scripts/smoke-assignment-api.sh
+      - name: Show container logs
+        if: ${{ failure() }}
+        run: docker compose -p session-manager-ci logs
+      - name: Stop the test stack
+        if: ${{ always() }}
+        run: docker compose -p session-manager-ci down

@@ -89,7 +89,7 @@ An informal CLI performance/invariant check ran 200 attendees, ten target/staffi
 - SM-31 / PR #7: subscription-backed native review and API-free Java 17 Maven CI passed review and merged. Automatic review on PR open is verified; do not post a duplicate manual review request for the same head.
 - SM-8 / SM-9 / SM-11: model validation and SRS-compliant empty-qualification exceptions passed review and merged in PR #8.
 - SM-13 / SM-27 / SM-18: segmentation acceptance cases and coverage checks are on `test/core-coverage`, passed Java 17 CI and native review and merged in PR #9.
-- SM-20–23: complete the later Spring Boot wrapper, assignment endpoint, Dockerfile, and local Compose setup as a separate milestone after the core implementation.
+- SM-20 / SM-21: Spring Boot wrapper and assignment API passed CI, Sonar and native review and merged in PRs #11 / #12. SM-22 / SM-23 container verification and review remain.
 
 Keep each iteration reviewable in a PR. Tickets move to In Review after verification and remain there until reviewed.
 
@@ -144,3 +144,13 @@ A CLI smoke run using `mvn spring-boot:run` on port 8080 and the documented curl
 The integrated API branch passes 150 tests plus Google Java Format, Checkstyle, SpotBugs and coverage. One HTTP characterization verifies FAC-05 empty qualifications: strict proposal, explicit exception final, then proposal again after withdrawal. Two DTO snapshot regressions failed before defensive copies were added; the accompanying null-input compatibility test stays green, and existing malformed-input HTTP tests still return 400. No SpotBugs detector exclusions were added for the transport records. Current service coverage is 138/139 lines and 30/32 branches; algorithm thresholds continue to pass. The packaged JAR sample and missing-cap request were rechecked through real HTTP after the fix.
 
 After all dependency patches, full API quality verification passes 157 tests, including the seven logging security cases. Authenticated Sonar CLI readback confirms zero remaining PR #11 dependency risks.
+
+## Phase 1B containers: SM-22 / SM-23
+
+Acceptance criteria and commands are in [container runtime](container-runtime.md). The multi-stage Dockerfile builds both modules with Java 17 and copies only the executable service JAR into a non-root JRE runtime. Compose uses the repository root as build context, maps localhost:8080, and runs one stateless service with `restart: unless-stopped`.
+
+The original service-directory build-context checklist conflicts with the sibling core dependency. The documented command uses `docker build -f session-manager-service/Dockerfile ... .` from the root, and Compose uses the same context.
+
+Before implementation, `docker compose config --quiet` failed because no configuration existed. The new configuration passes, as do actionlint and shell syntax validation. Official base-image tags were verified through public registry manifests. Local Docker build is blocked by daemon socket permissions, so container execution and the <300 MB image requirement remain unverified. A dedicated CI job will build/start Compose, check runtime size and user/JRE properties, exercise the HTTP sample, and clean up.
+
+The new reusable HTTP smoke script passes against the executable service JAR. That verifies its sample and assertions while preserving the separate Docker runtime verification gate.
