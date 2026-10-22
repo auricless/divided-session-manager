@@ -15,7 +15,7 @@ The required topology is browser -> UI static server/reverse proxy -> Spring Boo
 
 ## Delivery order and acceptance
 
-Keep one PR open at a time. Finish the React migration in PR #17, then deliver UI image/proxy, API readiness, Compose orchestration and full-stack acceptance in reviewable increments. Dependency links in Notion establish the prerequisites; actual runtime evidence closes a ticket, not this plan.
+Order prerequisite changes: the React migration in PR #17 supplies the frontend needed by the UI image/proxy, API readiness, Compose orchestration and full-stack acceptance. Independent work may proceed in parallel PRs; coordinate shared contracts before merging. Dependency links in Notion establish the prerequisites; actual runtime evidence closes a ticket, not this plan.
 
 Only the UI's configurable localhost port is published by default. UI/API and API/database use separate networks; optional host-development ports require a documented loopback override. The UI reverse-proxies /api/ without changing API error responses, while direct React routes load the UI shell. Required credentials come from environment configuration with no usable committed password.
 

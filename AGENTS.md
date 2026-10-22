@@ -12,6 +12,6 @@ Inspect, test, commit, and push through CLI. Implement behavior changes with fai
 
 ## Review and merge cycle
 
-Use native GitHub review, without an API-key action or a duplicate agent review. PR opening triggers review; inspect activity before requesting one review for an updated head. Batch fixes, tests, and documentation before pushing. Keep PRs sequential. Resolve findings through TDD and obtain a completed current-head review plus passing current-head CI before merging under the user's authorization. A pending review or an older verdict is insufficient.
+Use native GitHub review, without an API-key action or a duplicate agent review. PR opening triggers review; inspect activity before requesting one review for an updated head. Batch fixes, tests, and documentation before pushing. Independent PRs may be opened, reviewed, fixed, and merged in parallel. Order prerequisite changes and coordinate overlapping changes; do not bundle unrelated work merely to keep one PR open. Resolve findings through TDD and obtain a completed current-head review plus passing current-head CI before merging under the user's authorization. A pending review or an older verdict is insufficient.
 
 See [review operation](docs/automated-pr-review.md) for setup and stalled-review handling; reviewers need not read it for unrelated changes.

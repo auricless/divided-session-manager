@@ -18,7 +18,7 @@ Connect this repository and enable **Automatic review** in [Codex review setting
 
 ## Review cycle and merge gate
 
-Keep one PR open at a time. Batch implementation, regression tests, and documentation before pushing a review-ready head; avoid requesting another full review for every small intermediate edit. Review findings require a failing regression test, a fix, relevant passing checks, and a fresh review of the final head. Do not add a parallel agent review unless the user authorizes replacing the native review path.
+Independent PRs can be developed, opened, reviewed, fixed, and merged in parallel. Base them on the target branch without importing another PR’s unmerged changes. Order prerequisite work or use an explicit stack when changes depend on one another; coordinate overlapping changes. Apply the current-head CI/review gate to each PR independently. Batch implementation, regression tests, and documentation before pushing a review-ready head; avoid requesting another full review for every small intermediate edit. Review findings require a failing regression test, a fix, relevant passing checks, and a fresh review of the final head. Do not add a parallel agent review unless the user authorizes replacing the native review path.
 
 Merge only after current-head CI and current-head review complete with no unresolved actionable findings, under the user's merge authorization. An older clean review, pending reaction, or quota failure is insufficient. This policy does not create a required GitHub check or change branch protection.
 
