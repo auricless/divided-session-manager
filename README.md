@@ -1,6 +1,6 @@
 # Divided Session Manager
 
-Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository contains its Java grouping engine and stateless assignment API. Registration screens are a later milestone.
+Divided Session Manager is a project for assigning church event attendees to small discussion groups and facilitators. It addresses the registration team's need to place walk-ins quickly while keeping group rules and capacity visible. The intended product is an event workflow; this repository contains its Java grouping engine and stateless assignment API. The service also provides event registration, live group display, and print/CSV roster views.
 
 The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-31c61e61aca181538410fd3e3cdebdcc) holds the development tickets. The [draft SRS v1.0](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit?usp=drivesdk) is the ultimate source of truth for design; it takes precedence over conflicting ticket checklists. The first release is the core assignment library: it produces a final assignment when all required conditions are met and accepts explicit organizer overrides for recomputation. The Spring Boot service, storage, screens, and roster publishing are outside that first release.
 
@@ -12,8 +12,8 @@ The [project tracker](https://app.notion.com/p/Session-Manager-Project-Tracker-3
 | `session-manager-service` | Runnable Spring Boot wrapper and assignment API, merged after Java 17/21 CI, Sonar and native Codex review. |
 | Docker and Compose | Multi-stage non-root JRE image and Compose stack merged in PR #13 after CI built the image, verified size <300 MB/JRE/user, passed the HTTP smoke and native review. |
 | PostgreSQL and event CRUD | Flyway/JPA persistence and event CRUD delivered in PR #15 after PostgreSQL CI, native review and dependency remediation. |
-| Participant registration API and stored assignment | Event-scoped CRUD and latest snapshots implemented; quality verification passes, CI/native review required before delivery. |
-| Registration UI and printable rosters | Remaining Phase 2 work, tracked in the SRS acceptance audit. |
+| Participant registration API and stored assignment | Delivered in PR #16 after PostgreSQL CI, concurrency/restart acceptance and native review. |
+| Registration UI, live display and print/CSV | Implemented and browser-verified; current frontend PR CI and native review remain required before delivery. |
 
 ## What the core accepts and returns
 
@@ -126,3 +126,5 @@ Java style, formatting, bug checks, and SonarQube Cloud setup are documented in 
 The service startup integration test invokes the actual main method. JaCoCo also writes its report under `session-manager-service/target/site/jacoco/`; CI retains both module reports. Algorithm coverage thresholds remain scoped to the core service package.
 
 See the [full SRS acceptance audit](docs/srs-acceptance-audit.md) for requirement-to-test evidence and the remaining Phase 2 roadmap.
+
+Open `/events` after starting the service for [registration, live display and roster export](docs/web-workflow.md).
