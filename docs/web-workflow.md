@@ -11,7 +11,7 @@ npm ci --ignore-scripts --prefix frontend
 npm run dev --prefix frontend
 ```
 
-Open the URL printed by Vite, normally localhost:5173/events. The development server proxies relative `/api/` requests to localhost:8080. For another local API port, set `API_PROXY_TARGET` before starting Vite; it is a server-side development setting and is not bundled into the browser. `npm run build --prefix frontend` emits independent production assets in `frontend/dist`; it does not copy them into the API JAR. Vite's development/preview server is for local work; the production UI server belongs to SM-38.
+Open the URL printed by Vite, normally localhost:5173/events. The development server proxies relative `/api/` requests to localhost:8080. For another local API port, set `API_PROXY_TARGET` before starting Vite; it is a server-side development setting and is not bundled into the browser. `npm run build --prefix frontend` emits independent production assets in `frontend/dist`; it does not copy them into the API JAR. Vite's development/preview server is for local work; Docker Compose serves the production build through Nginx.
 
 ## Workflow
 
@@ -22,7 +22,7 @@ Open the URL printed by Vite, normally localhost:5173/events. The development se
 5. Open `/events/{id}/groups` for live display. Both screens poll every two seconds. Mismatched event/snapshot revisions, connection errors and obsolete requests cannot expose a verified roster. Back/forward restoration immediately refreshes and resumes one polling cycle; React unmount cancels work/listeners.
 6. Print or export CSV. Each action requires a current result from its own refresh; unavailable output disables both controls. The print stylesheet hides controls and keeps group cards together. The CSV API quotes/escapes cells, guards spreadsheet formulas, includes proposal/blocker/warning/unassigned details and rejects invalidated snapshots with 409.
 
-No database credentials enter React. The UI server/proxy must retain security headers and same-origin API routing in SM-38; API responses retain no-store and security headers now. Authentication/public deployment are not part of this local workflow.
+No database credentials enter React. The Nginx server provides security headers and same-origin API routing; API responses retain no-store and security headers. Authentication/public deployment are not part of this local workflow.
 
 ## Verification
 
@@ -35,49 +35,3 @@ mvn -Pquality verify
 ```
 
 React component and feed tests cover event defaults/explicit cap, settings, participant edit/removal and validation retention, proposal/exception withdrawal, revision mismatch, failures/retry, repeated cache restoration and obsolete responses. The tests were introduced before the React entry point; API-only routing first failed with 200 where independent UI routes require backend 404. Full Java PostgreSQL verification continues to enforce core/API/security behavior and quality gates.
-
-Earlier Thymeleaf browser acceptance covered create/register, proposals/final, explicit exceptions, cross-client invalidation/recompute, participant edit/removal and parsed CSV download. That is historical evidence, not proof of the React migration. Current React browser and exact-head CI/native review evidence must be recorded in [PR #17](https://github.com/auricless/divided-session-manager/pull/17) before closing SM-36/37. Paper printing and public deployment have not been performed.
-
-## React migration acceptance (2026-10-22)
-
-- Clean npm install, ESLint/React-hooks/Prettier checks, 17 React/feed tests, production build and npm dependency audit pass; no reported dependency vulnerabilities. Full PostgreSQL Java quality verification passes all 183 tests.
-- Against a confirmed restarted API-only JAR (backend /events returns 404) and separate Vite server, actual browser acceptance created an event with an explicit cap, retained invalid Young Adult input, saved the corrected attendee, showed a leaderless proposal, reached FINAL with an eligible leader, displayed explicit exceptions/reset and returned to a proposal after withdrawal.
-- The React live view cleared an invalidated roster/disabled controls after a separate client registered, then automatically displayed a recomputed FINAL with two attendees. The participant edit was saved through React. CSV fetched through the same UI-origin API proxy parsed as four rows, twelve columns and two matching current attendees.
-- Browser automation timed out at participant-removal confirmation; that browser action is not claimed as passed. The React component test verifies confirm/cancel, owned DELETE and refreshed roster. Physical printing and a React-browser CSV download were not performed; component tests verify verification-before-print/export, and the HTTP CSV response is parsed independently.
-- Earlier browser Back checks reached an older running Thymeleaf process and are not evidence for the updated implementation. Persisted navigation, stale responses and single polling cycles are covered by the automated feed/React tests. Actual three-container acceptance remains SM-38–41.
-
-The frontend install policy runs CI's exact npm command against a local dependency with a marker-writing postinstall script. It first failed because installation executed that script; CI now uses `npm ci --ignore-scripts`, and the fixture installs without the marker. React tests and production build pass with lifecycle scripts disabled.
-
-Native review also reproduced a refresh-before-print race: the print callback still saw the previous DOM while React had queued the new roster. A failing regression now records the DOM inside `window.print`; the click handler commits the exact verified snapshot synchronously before opening the dialog. The test observes the new attendee/count, not the old roster.
-
-Remote settings synchronization first failed because the form retained an old event name/config after the poll returned updated settings. The settings form now remounts on stored name/config changes, preserving drafts across roster/assignment-only revision changes. The regression checks the displayed remote cap/target/gender/tier ranges and the subsequent PUT payload; invalid submissions with unchanged stored settings retain their inputs.
-
-Two further native findings were reproduced before fixing: remote roster changes left old participant rows/counts visible, and a scheduled poll aborted an in-flight print/export refresh. Roster reads now follow the polled event revision (including cache restoration), while background polls share a pending user refresh instead of canceling it. The regressions verify remote edit/deletion/count updates and a slow action surviving the two-second timer.
-
-### Linter URI dependency override
-
-ESLint currently uses Ajv 6, whose latest `uri-js` dependency (4.4.1) has no
-patched release for CVE-2026-93690, CVE-2026-93751 and CVE-2026-103387. The npm
-override is limited to Ajv 6.15.0 and substitutes the maintained `fast-uri` 4.2.3
-implementation under that dependency name. Ajv's required parse, serialize and
-resolve APIs remain covered by nested schema-reference validation and the full
-ESLint run. A separate process tests the Unicode line-separator input that hung
-the old parser, with a timeout protecting the test runner. This is a development
-tool dependency; no URI library is included in the browser bundle. Revisit the
-override when ESLint drops Ajv 6 or the upstream dependency is repaired.
-
-
-## Container acceptance update (2026-10-23)
-
-The frontend now has 24 passing component/feed/parser tests, including stored
-participant editor synchronization, preservation across derived-tier changes,
-event-list cache restoration and transient roster-read retries. A CLI Chromium
-test also passes against the local independent React/API servers. The first
-three-container preflight CI run
-[39817001524](https://github.com/auricless/divided-session-manager/actions/runs/39817001524)
-built the independent images and passed that browser workflow through the real
-Nginx proxy: registration, proposal/FINAL, cross-client invalidation/recompute,
-current roster DOM captured during a mocked print callback and actual browser
-CSV downloading. Physical printing remains untested. Current deployment PR
-checks/review remain required; the older unperformed-download wording above
-records the earlier manual acceptance boundary.

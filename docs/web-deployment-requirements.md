@@ -1,6 +1,6 @@
 # React and container deployment requirements
 
-Authority: [SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit), section 9, revised 2026-10-22. [Full text snapshot](srs-v1.1.txt). The v1.0 source is retained as history; the 28 core functional requirements are unchanged.
+Authority: [SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit), section 9, deployment revision 2026-10-22; PR workflow clarified 2026-10-23. [Full text snapshot](srs-v1.1.txt). The v1.0 source is retained as history; the 28 core functional requirements are unchanged.
 
 The required topology is browser -> UI static server/reverse proxy -> Spring Boot API -> PostgreSQL. The standalone Java core remains a dependency of the API. React assets belong to an independent frontend build and image; they are not bundled in the API JAR.
 
@@ -8,14 +8,14 @@ The required topology is browser -> UI static server/reverse proxy -> Spring Boo
 | --- | --- | --- | --- |
 | React event/config/participant/facilitator workflow | WEB-01/02, VER-01/03 | [SM-36](https://app.notion.com/p/40161e61aca181589385e9d19c7a4d1e) | Delivered in PR #17; current-head CI/native review passed before merge |
 | React live/proposal/print/export and lifecycle safety | WEB-03/04, VER-01/03 | [SM-37](https://app.notion.com/p/40161e61aca181f3bd00ff4b54522f1d) | Delivered in PR #17; 24 frontend tests and current-head review passed |
-| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | Implemented; preflight CI passed, deployment PR CI/native gates required |
-| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | Implemented; preflight CI passed, deployment PR CI/native gates required |
-| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | Implemented; preflight CI passed, deployment PR CI/native gates required |
-| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | Implemented; preflight CI passed, deployment PR CI/native gates required |
+| Independent UI container and same-origin proxy | DEP-01/03/04/08 | [SM-38](https://app.notion.com/p/40161e61aca1814998a2ccfc44dacf0c) | Delivered in PR #18; current-head CI/native review passed before merge |
+| Database-aware API readiness | DEP-01/05/07/08/09 | [SM-39](https://app.notion.com/p/40161e61aca181f69d3af12bf3c95456) | Delivered in PR #18; current-head CI/native review passed before merge |
+| Three-service Compose, private networks and durable data | DEP-02/04/05/06/07/09 | [SM-40](https://app.notion.com/p/40161e61aca181359ac9d4208715b133) | Delivered in PR #18; current-head CI/native review passed before merge |
+| Actual-stack CI and complete acceptance traceability | WEB-01–04, DEP-01–09, VER-01–03 | [SM-41](https://app.notion.com/p/40161e61aca1816080d1f6ca5d27c0cd) | Delivered in PR #18; current-head CI/native review passed before merge |
 
 ## Delivery order and acceptance
 
-Keep one PR open at a time. Finish the React migration in PR #17, then deliver UI image/proxy, API readiness, Compose orchestration and full-stack acceptance in reviewable increments. Dependency links in Notion establish the prerequisites; actual runtime evidence closes a ticket, not this plan.
+Order prerequisite changes: the React migration in PR #17 supplies the frontend needed by the UI image/proxy, API readiness, Compose orchestration and full-stack acceptance. Independent work may proceed in parallel PRs; coordinate shared contracts before merging. Dependency links in Notion establish the prerequisites; actual runtime evidence closes a ticket, not this plan.
 
 Only the UI's configurable localhost port is published by default. UI/API and API/database use separate networks; optional host-development ports require a documented loopback override. The UI reverse-proxies /api/ without changing API error responses, while direct React routes load the UI shell. Required credentials come from environment configuration with no usable committed password.
 
