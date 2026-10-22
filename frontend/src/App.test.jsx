@@ -336,3 +336,61 @@ it('commits a newly refreshed roster to the DOM before opening the print dialog'
     print.mockRestore();
   }
 });
+
+it('refreshes remotely changed settings while preserving drafts across roster-only revisions', async () => {
+  vi.useFakeTimers();
+  const original = api.getMockImplementation();
+  api.mockImplementation(async (path, method, body) => {
+    if (method === 'PUT') {
+      currentEvent = { ...currentEvent, ...body };
+      return currentEvent;
+    }
+    return original(path, method, body);
+  });
+  try {
+    render(<RegistrationPage eventId={event.id} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByText('Event settings', { selector: 'summary' }));
+    let form = screen.getByRole('form', { name: 'Event settings' });
+    fireEvent.change(within(form).getByLabelText('Target participants per group'), {
+      target: { value: '3' },
+    });
+    currentEvent = { ...currentEvent, revision: 2 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    expect(within(form).getByLabelText('Target participants per group')).toHaveValue(3);
+    const remoteConfig = {
+      ...config,
+      capSize: 8,
+      targetSize: 5,
+      genderMode: 'MIXED',
+      activeTiers: ['YOUTH'],
+      lifeStageSubgroupingEnabled: false,
+      ageTierBoundaries: {
+        TEENS: { minAge: 13, maxAge: 17 },
+        YOUTH: { minAge: 18, maxAge: 25 },
+        YOUNG_ADULT: { minAge: 26, maxAge: 2147483647 },
+      },
+    };
+    currentEvent = { ...currentEvent, name: 'Remote settings', config: remoteConfig, revision: 3 };
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
+    form = screen.getByRole('form', { name: 'Event settings' });
+    expect(within(form).getByLabelText('Event name')).toHaveValue('Remote settings');
+    expect(within(form).getByLabelText('Maximum participants per group')).toHaveValue(8);
+    expect(within(form).getByLabelText('Target participants per group')).toHaveValue(5);
+    expect(within(form).getByLabelText('Gender grouping')).toHaveValue('MIXED');
+    expect(within(form).getByLabelText('TEENS from age')).toHaveValue(13);
+    expect(within(form).getByLabelText('YOUTH from age')).toHaveValue(18);
+    expect(
+      within(form).getByLabelText('Separate Young Adult students and working professionals'),
+    ).not.toBeChecked();
+    await act(async () => fireEvent.submit(form));
+    expect(api).toHaveBeenCalledWith(eventPath, 'PUT', {
+      name: 'Remote settings',
+      config: remoteConfig,
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});

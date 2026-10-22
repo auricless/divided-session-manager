@@ -265,7 +265,15 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
         <section className="card">
           <details>
             <summary>Event settings</summary>
-            <AsyncForm name="Event settings" action={saveSettings} onError={onError}>
+            <p className="muted">
+              Changes saved at another registration desk refresh these fields.
+            </p>
+            <AsyncForm
+              key={JSON.stringify([event.name, event.config])}
+              name="Event settings"
+              action={saveSettings}
+              onError={onError}
+            >
               <label>
                 Event name
                 <input name="name" maxLength="200" required defaultValue={event.name} />
