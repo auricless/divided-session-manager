@@ -16,11 +16,17 @@ public class EventService {
   private final EventRepository events;
   private final SessionConfigMapper configs;
   private final ObjectMapper json;
+  private final ParticipantRepository participants;
 
-  EventService(EventRepository events, SessionConfigMapper configs, ObjectMapper json) {
+  EventService(
+      EventRepository events,
+      SessionConfigMapper configs,
+      ObjectMapper json,
+      ParticipantRepository participants) {
     this.events = events;
     this.configs = configs;
     this.json = json;
+    this.participants = participants;
   }
 
   public EventResponse create(EventRequest request) {
@@ -45,6 +51,10 @@ public class EventService {
     validateName(request);
     var config = configs.toResponse(configs.toDomain(request.config()));
     EventEntity event = events.lockById(id).orElseThrow(this::notFound);
+    var domainConfig = configs.toDomain(config);
+    participants
+        .findAllByEventIdOrderByNameAscIdAsc(id)
+        .forEach(p -> p.update(p.toDomain().forSession(domainConfig)));
     event.update(request.name().strip(), json.writeValueAsString(config));
     return response(events.saveAndFlush(event));
   }

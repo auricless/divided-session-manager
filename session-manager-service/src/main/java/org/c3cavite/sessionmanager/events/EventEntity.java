@@ -18,6 +18,12 @@ class EventEntity {
   @Column(name = "config_json", nullable = false, columnDefinition = "text")
   private String configJson;
 
+  @Column(name = "roster_revision", nullable = false)
+  private long rosterRevision;
+
+  @Column(name = "latest_assignment_json", columnDefinition = "text")
+  private String latestAssignmentJson;
+
   @Version private Long revision;
 
   protected EventEntity() {}
@@ -30,6 +36,20 @@ class EventEntity {
   void update(String name, String configJson) {
     this.name = name;
     this.configJson = configJson;
+    this.latestAssignmentJson = null;
+  }
+
+  void rosterChanged() {
+    rosterRevision++;
+    latestAssignmentJson = null;
+  }
+
+  void assign(String snapshot) {
+    latestAssignmentJson = snapshot;
+  }
+
+  String assignmentJson() {
+    return latestAssignmentJson;
   }
 
   UUID id() {
