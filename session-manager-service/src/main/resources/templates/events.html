@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Events · Session Manager</title><link rel="stylesheet" href="/assets/session-manager.css"><script type="module" src="/assets/registration.js"></script></head>
+<body><main class="shell">
+<header><p class="eyebrow">SESSION MANAGER</p><h1>Events</h1><p>Register attendees, configure grouping rules, and prepare a staffed assignment.</p></header>
+<p id="feedback" role="status" aria-live="polite"></p>
+<div class="columns"><section class="card"><h2>Your events</h2><p th:if="${events.isEmpty()}" class="muted">No events yet. Create one to begin registration.</p><ul class="event-list"><li th:each="event : ${events}"><a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.name}">Event</a></li></ul></section>
+<section class="card"><h2>Create event</h2><form id="create-event-form"><label>Event name <input name="name" maxlength="200" required autocomplete="off"></label><div th:replace="~{fragments/config-fields :: fields}"></div><button type="submit">Create event</button></form></section></div>
+</main></body></html>

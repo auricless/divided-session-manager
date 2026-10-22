@@ -46,7 +46,7 @@ public class EventAssignmentService {
                 config, roster, request.facilitators(), request.facilitatorExceptions()));
     event.assign(json.writeValueAsString(result));
     events.saveAndFlush(event);
-    return new EventAssignmentResponse(event.id(), event.revision(), result);
+    return new EventAssignmentResponse(event.id(), event.name(), event.revision(), result);
   }
 
   @Transactional(readOnly = true)
@@ -57,6 +57,7 @@ public class EventAssignmentService {
         : Optional.of(
             new EventAssignmentResponse(
                 event.id(),
+                event.name(),
                 event.revision(),
                 json.readValue(event.assignmentJson(), AssignmentResponse.class)));
   }

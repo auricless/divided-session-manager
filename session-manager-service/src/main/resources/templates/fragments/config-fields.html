@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="fields" class="config-fields">
+  <div class="fields">
+    <label>Maximum participants per group <input type="number" name="capSize" min="1" max="2147483647" required th:value="${config.capSize}" placeholder="Required for this event"></label>
+    <label>Target participants per group <input type="number" name="targetSize" min="1" max="2147483647" required th:value="${config.targetSize}"></label>
+    <label>Gender grouping <select name="genderMode"><option th:each="mode : ${modes}" th:value="${mode}" th:text="${mode}" th:selected="${mode == config.genderMode}"></option></select></label>
+  </div>
+  <label class="check"><input type="checkbox" name="lifeStageSubgroupingEnabled" th:checked="${config.lifeStageSubgroupingEnabled}">Separate Young Adult students and working professionals</label>
+  <details><summary>Active tiers and age boundaries</summary>
+    <p class="muted">Ranges are inclusive and must be contiguous. Ages below 13 are excluded with warnings.</p>
+    <div class="tier-fields" th:each="tier : ${tiers}">
+      <label class="check"><input type="checkbox" name="activeTiers" th:value="${tier}" th:checked="${config.activeTiers.contains(tier)}"><span th:text="${tier}">Tier</span></label>
+      <label>From age <input type="number" min="13" max="2147483647" required th:name="${tier + '.minAge'}" th:value="${config.ageTierBoundaries.get(tier).minAge}"></label>
+      <label><span th:text="${tier.name() == 'YOUNG_ADULT' ? 'Through age (optional)' : 'Through age'}">Through age</span> <input type="number" min="13" max="2147483647" th:required="${tier.name() != 'YOUNG_ADULT'}" th:name="${tier + '.maxAge'}" th:value="${config.ageTierBoundaries.get(tier).maxAge == 2147483647 ? null : config.ageTierBoundaries.get(tier).maxAge}"></label>
+    </div>
+    <p class="muted">Leave the Young Adult upper age blank for no upper limit.</p>
+  </details>
+</div>
+</body></html>
