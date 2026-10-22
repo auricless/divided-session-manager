@@ -22,3 +22,5 @@ Only the UI's configurable localhost port is published by default. UI/API and AP
 Compose waits for healthy PostgreSQL, database-aware API readiness and the UI server. Named storage survives normal shutdown/recreation. UI/API runtimes stay unprivileged; the API image remains below 300 MB with no Node, Maven or JDK. CI must build/run all three containers, verify routing/health/isolation and exercise persistence after recreation. React component/lifecycle tests retain the stale-revision and back/forward fixes; existing PostgreSQL Java tests, algorithm coverage and quality/security gates remain required.
 
 Public deployment, auth/TLS, Kubernetes, clustering, autoscaling, backup policy and extra business services are not specified by this revision.
+
+[Detailed section 9 acceptance evidence](deployment-acceptance.md) distinguishes local checks from the required actual-stack CI results.

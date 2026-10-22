@@ -64,3 +64,6 @@ Persistence must stay outside core, use real PostgreSQL verification and repeata
 ## Revision 1.1 deployment acceptance
 
 Section 9 adds 16 WEB/DEP/VER requirements. [Deployment requirements and tickets](web-deployment-requirements.md) map these to SM-36–41. React migration, separate UI image/proxy, database-aware API readiness, private three-container Compose and actual-stack CI are not complete until their own current-head tests/review and runtime evidence pass. Do not infer v1.1 completion from the earlier two-container or Thymeleaf evidence.
+
+
+[The deployment acceptance matrix](deployment-acceptance.md) maps every section 9 requirement to implementation, tests and precise pending runtime/review evidence.
