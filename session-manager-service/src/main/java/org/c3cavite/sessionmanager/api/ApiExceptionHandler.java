@@ -8,17 +8,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 class ApiExceptionHandler {
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    ErrorResponse invalidInput(IllegalArgumentException error) {
-        return new ErrorResponse(error.getMessage());
-    }
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  ErrorResponse invalidInput(IllegalArgumentException error) {
+    return new ErrorResponse(error.getMessage());
+  }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    ErrorResponse unreadableRequest() {
-        return new ErrorResponse("Request must contain valid JSON with the documented field types and enum values");
-    }
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  ErrorResponse unreadableRequest() {
+    return new ErrorResponse(
+        "Request must contain valid JSON with the documented field types and enum values");
+  }
 
-    record ErrorResponse(String message) { }
+  record ErrorResponse(String message) {}
 }
