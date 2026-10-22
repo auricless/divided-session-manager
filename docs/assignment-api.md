@@ -35,7 +35,7 @@ The sample forms one Youth / MALE group, staffed by Sam, with state `FINAL` and 
 | `config.lifeStageSubgroupingEnabled` | Boolean, default true. |
 | `config.ageTierBoundaries` | Optional object with all three tiers, each containing inclusive integer `minAge` and `maxAge`. Core validation requires ordered, contiguous ranges starting at 13 or above. |
 | `participants` | Required array. Each item needs nonblank `name`, positive integer `age`, and `MALE`/`FEMALE` gender. Session-derived Young Adults also need `STUDENT` or `WORKING_PROFESSIONAL` life stage. |
-| `facilitators` | Required array. Each item needs nonblank `name`, `LEADER`/`ASSISTANT` role, gender, and nonempty `qualifiedTiers`. |
+| `facilitators` | Required array. Each item needs nonblank `name`, `LEADER`/`ASSISTANT` role, gender, and a non-null `qualifiedTiers` array without null entries. An empty array requires an explicit qualification exception for eligibility. |
 | `facilitatorExceptions` | Optional array; each item needs a valid zero-based `facilitatorIndex`. Boolean `allowAgeTierMismatch` and `allowGenderMismatch` default to false. |
 
 Omitted or null optional configuration fields retain the core defaults. Omitted or null exceptions mean no exceptions. Null roster entries are invalid. Enum values are case-sensitive. JSON types must match the contract: numeric strings, fractional caps or ages, ordinal enum values, and string boolean flags are rejected.
@@ -57,5 +57,7 @@ The response contains `state` (`FINAL` or `NON_FINAL_PROPOSAL`), `groups`, `bloc
 Each group exposes its tier/gender/life-stage targets, participant records including their session-derived `ageTier`, leader, optional assistant, and participant-only `size`. Mixed or unsplit targets and unfilled staff slots are null. Each blocker has a `code`, one-based `groupNumber`, and actionable `message`. Unassigned entries retain their participant details and a `reason`. An empty or wholly excluded roster can be final with zero groups.
 
 Invalid requests return HTTP 400 and `{"message":"..."}`. Staffing shortages and feasible-constraint conflicts return HTTP 200 proposals with blockers; they are not malformed input.
+
+Request and response records capture collection snapshots. Request copies preserve null values until boundary validation so malformed requests still receive clean HTTP 400 responses; response lists are unmodifiable.
 
 Automated PR review remains required before this implementation is merged.

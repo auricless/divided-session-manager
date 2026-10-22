@@ -9,17 +9,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/sessions")
 public class SessionController {
-    private final GroupAssignmentService assignments;
-    private final SessionAssignmentMapper mapper;
+  private final GroupAssignmentService assignments;
+  private final SessionAssignmentMapper mapper;
 
-    SessionController(GroupAssignmentService assignments, SessionAssignmentMapper mapper) {
-        this.assignments = assignments;
-        this.mapper = mapper;
-    }
+  SessionController(GroupAssignmentService assignments, SessionAssignmentMapper mapper) {
+    this.assignments = assignments;
+    this.mapper = mapper;
+  }
 
-    @PostMapping("/assign")
-    public AssignmentResponse assign(@RequestBody AssignmentRequest request) {
-        SessionAssignmentMapper.AssignmentInput input = mapper.toDomain(request);
-        return mapper.toResponse(assignments.assign(input.config(), input.participants(), input.facilitators(), input.exceptions()));
-    }
+  @PostMapping("/assign")
+  public AssignmentResponse assign(@RequestBody AssignmentRequest request) {
+    SessionAssignmentMapper.AssignmentInput input = mapper.toDomain(request);
+    return mapper.toResponse(
+        assignments.assign(
+            input.config(), input.participants(), input.facilitators(), input.exceptions()));
+  }
 }
