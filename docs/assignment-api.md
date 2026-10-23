@@ -14,7 +14,7 @@ Scope: SM-21, SRS OUT-03 and section 6.2. This stateless Phase 1B wrapper expose
 
 ## Run a request
 
-From the repository root, install the modules with `mvn install`, then start the service with `mvn -pl session-manager-service spring-boot:run`. In another terminal:
+The endpoint computes from each request without storing its roster. The application that hosts it also serves persistent events, so startup requires PostgreSQL and a database password. Follow [local database and startup](event-api.md#local-database-and-startup) from the repository root. Once the service is running, send this request in another terminal:
 
 ```bash
 curl --fail-with-body -sS http://localhost:8080/api/v1/sessions/assign \
