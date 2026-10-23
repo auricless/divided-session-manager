@@ -137,6 +137,7 @@ describe('React registration', () => {
         result.result.warnings = body.facilitatorExceptions.length
           ? ['Explicit age-tier exception applied']
           : [];
+        currentAssignment = result;
         return result;
       }
       return original(path, method, body);
@@ -162,6 +163,81 @@ describe('React registration', () => {
       { facilitatorIndex: 0, allowAgeTierMismatch: true, allowGenderMismatch: false },
     ]);
     expect(calls[1][2].facilitatorExceptions).toEqual([]);
+  });
+
+  it.each([
+    ['invalidated', null],
+    ['replaced', assignment(3)],
+  ])('keeps a newer %s assignment when an older generation response arrives', async (_, newer) => {
+    vi.useFakeTimers();
+    const original = api.getMockImplementation();
+    let resolvePost;
+    api.mockImplementation((path, method, body) => {
+      if (path === `${eventPath}/assignment` && method === 'POST') {
+        currentEvent = { ...currentEvent, revision: 2 };
+        currentAssignment = assignment(2);
+        return new Promise((resolve) => {
+          resolvePost = resolve;
+        });
+      }
+      return original(path, method, body);
+    });
+    try {
+      render(<RegistrationPage eventId={event.id} />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      fireEvent.submit(screen.getByRole('form', { name: 'Facilitator roster' }));
+      expect(resolvePost).toBeTypeOf('function');
+      currentEvent = { ...currentEvent, revision: 3 };
+      currentAssignment = newer && {
+        ...newer,
+        result: { ...newer.result, totalAssignedParticipants: 3 },
+      };
+      await act(async () => vi.advanceTimersByTimeAsync(2000));
+      if (newer)
+        expect(document.querySelector('#assignment')).toHaveTextContent('3 assigned participants');
+      else expect(screen.getByText(/No current assignment/)).toBeVisible();
+      await act(async () => resolvePost(assignment(2)));
+      if (newer)
+        expect(document.querySelector('#assignment')).toHaveTextContent('3 assigned participants');
+      else expect(screen.getByText(/No current assignment/)).toBeVisible();
+      expect(currentEvent.revision).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears one-run permissions and the old assignment when verification fails after generation', async () => {
+    const user = userEvent.setup();
+    const original = api.getMockImplementation();
+    currentAssignment = assignment(1);
+    let postSucceeded = false;
+    api.mockImplementation((path, method, body) => {
+      if (path === `${eventPath}/assignment` && method === 'POST') {
+        postSucceeded = true;
+        currentEvent = { ...currentEvent, revision: 2 };
+        currentAssignment = assignment(2);
+        return currentAssignment;
+      }
+      if (postSucceeded && path === eventPath) throw new Error('Verification offline');
+      return original(path, method, body);
+    });
+    render(<RegistrationPage eventId={event.id} />);
+    expect(await screen.findByText('Final assignment')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Add facilitator' }));
+    const facilitator = screen.getByRole('group', { name: 'Facilitator', exact: true });
+    await user.type(within(facilitator).getByLabelText('Name', { exact: true }), 'Sam');
+    await user.selectOptions(within(facilitator).getByLabelText('Gender', { exact: true }), 'MALE');
+    await user.click(within(facilitator).getByLabelText('Youth', { exact: true }));
+    const permission = within(facilitator).getByLabelText(
+      'Allow an age-tier qualification exception for this run',
+    );
+    await user.click(permission);
+    await user.click(screen.getByRole('button', { name: 'Generate groups' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Verification offline');
+    expect(permission).not.toBeChecked();
+    expect(screen.queryByText('Final assignment')).not.toBeInTheDocument();
   });
 });
 

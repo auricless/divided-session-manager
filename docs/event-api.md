@@ -23,7 +23,7 @@ mvn -pl session-manager-service -am package -DskipTests
 java -jar session-manager-service/target/session-manager-service-1.0-SNAPSHOT.jar
 ```
 
-The API listens on localhost:8080. In another terminal, start Vite as described in [frontend development](web-workflow.md). Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. If you change `DB_PORT`, update `DATABASE_URL` to match. Do not put credentials in source files.
+The API is available at http://localhost:8080 from this host. In another terminal, start Vite as described in [frontend development](web-workflow.md). Optional `DATABASE_URL` defaults to `jdbc:postgresql://localhost:5432/session_manager`; `DATABASE_USER` defaults to `session_manager`. If you change `DB_PORT`, update `DATABASE_URL` to match. Do not put credentials in source files.
 
 ## Event contract
 

@@ -214,11 +214,11 @@ export function RegistrationPage({ eventId, navigate = navigateTo }) {
     }
   }
   async function generate(form) {
-    const snapshot = await api(`${path}/assignment`, 'POST', staffFrom(form, staff));
-    assignment.show(snapshot);
+    await api(`${path}/assignment`, 'POST', staffFrom(form, staff));
     form.querySelectorAll('[data-permission]').forEach((input) => {
       input.checked = false;
     });
+    await assignment.refresh();
     report('Groups computed. Explicit exceptions have been cleared for the next run.');
   }
   if (!assignment.event)
