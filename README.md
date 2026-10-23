@@ -1,5 +1,7 @@
 # Divided Session Manager
 
+The project is being split into an independent core library and a complete application repository. This monorepo remains usable during the transition; see [repository migration](docs/repository-migration.md) for status and completion criteria.
+
 An app for organizing church event attendees into small discussion groups. Register attendees, configure group sizes and age tiers, assign facilitators, and share or print the resulting roster.
 
 ## How it works

@@ -1,5 +1,7 @@
 # React and container deployment requirements
 
+Migration note (2026-10-23): SRS section 10 supersedes this three-container release topology for the new `divided-session-service` repository. That image combines compiled React assets, the API and the separately published core library; PostgreSQL remains external. This file continues to describe the working monorepo during migration. See [repository migration](repository-migration.md) for the archive conditions.
+
 Authority: [SRS v1.1](https://docs.google.com/document/d/1AuslVQYFWfaqpQPtCLFsc3tIh2b8LNPNU0TySDOxwJE/edit), section 9, deployment revision 2026-10-22; PR workflow clarified 2026-10-23. [Full text snapshot](srs-v1.1.txt). The v1.0 source is retained as history; the 28 core functional requirements are unchanged.
 
 The required topology is browser -> UI static server/reverse proxy -> Spring Boot API -> PostgreSQL. The standalone Java core remains a dependency of the API. React assets belong to an independent frontend build and image; they are not bundled in the API JAR.
